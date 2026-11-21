@@ -1,0 +1,2191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRADEBOY COLOR - P2P Link Cable File Transfer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gb-kiwi: #8ce232;
+            --gb-kiwi-dark: #6ab81d;
+            --gb-kiwi-light: #a9f25c;
+            --gb-teal: #0086a8;
+            --gb-teal-dark: #00637d;
+            --gb-teal-light: #19a6ca;
+            --bezel-black: #232528;
+            --lcd-bg: #c6d4b8;
+            --lcd-dark: #1d2b1e;
+            --lcd-mid: #536b54;
+        }
+
+        body {
+            background: radial-gradient(circle at 50% 25%, #f4efe6 0%, #dfd6c7 65%, #c9beae 100%);
+            min-height: 100vh;
+            font-family: 'VT323', monospace;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        .title-tradeboy {
+            font-family: 'Arial Black', Impact, sans-serif;
+            font-style: italic;
+            letter-spacing: 0.03em;
+            color: #2b2e33;
+            text-shadow: 0 2px 0 rgba(255, 255, 255, 0.9), 0 4px 12px rgba(0, 0, 0, 0.14);
+        }
+
+        .pixel-font {
+            font-family: 'Press Start 2P', monospace;
+        }
+
+        /* Game Boy Color Shell Styling - Scaled Up */
+        .gbc-shell {
+            width: 392px;
+            max-width: 95vw;
+            border-radius: 26px 26px 72px 26px;
+            padding: 22px 24px 38px 24px;
+            position: relative;
+            transition: transform 0.2s ease;
+        }
+
+        .gbc-kiwi {
+            background: linear-gradient(145deg, var(--gb-kiwi-light) 0%, var(--gb-kiwi) 18%, var(--gb-kiwi) 85%, var(--gb-kiwi-dark) 100%);
+            box-shadow:
+                inset 3px 3px 6px rgba(255, 255, 255, 0.55),
+                inset -5px -6px 12px rgba(48, 88, 10, 0.45),
+                0 24px 42px rgba(0, 0, 0, 0.26),
+                0 8px 14px rgba(0, 0, 0, 0.16);
+        }
+
+        .gbc-teal {
+            background: linear-gradient(145deg, var(--gb-teal-light) 0%, var(--gb-teal) 18%, var(--gb-teal) 85%, var(--gb-teal-dark) 100%);
+            box-shadow:
+                inset 3px 3px 6px rgba(255, 255, 255, 0.4),
+                inset -5px -6px 12px rgba(0, 48, 62, 0.55),
+                0 24px 42px rgba(0, 0, 0, 0.26),
+                0 8px 14px rgba(0, 0, 0, 0.16);
+        }
+
+        /* Side Link Port Notch */
+        .link-port {
+            position: absolute;
+            top: 152px;
+            width: 16px;
+            height: 50px;
+            background: #1c1d20;
+            border-radius: 4px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.8);
+            z-index: 5;
+        }
+        .link-port-left { right: -7px; }
+        .link-port-right { left: -7px; }
+
+        /* Screen Lens Bezel */
+        .gbc-bezel {
+            background: linear-gradient(160deg, #2d3035 0%, #1d1f22 100%);
+            border-radius: 16px 16px 42px 16px;
+            padding: 16px 20px 14px 20px;
+            box-shadow:
+                inset 0 2px 4px rgba(255, 255, 255, 0.12),
+                0 3px 6px rgba(0, 0, 0, 0.35);
+            position: relative;
+        }
+
+        /* Top Label Banner */
+        .top-banner-tag {
+            background: #ffffff;
+            color: #000000;
+            border: 3px solid #000000;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-weight: 800;
+            font-size: 14px;
+            letter-spacing: 0.04em;
+            padding: 2px 12px;
+            box-shadow: 0 3px 0 rgba(0,0,0,0.45);
+            text-align: center;
+            margin: -6px auto 10px auto;
+            width: fit-content;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Power LED */
+        .power-led {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ff2a2a;
+            box-shadow: 0 0 8px #ff2a2a, 0 0 14px #ff5e5e;
+            animation: ledPulse 2.4s infinite ease-in-out;
+        }
+        @keyframes ledPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.78; }
+        }
+
+        /* Retro LCD Display - Scaled Up */
+        .gbc-lcd {
+            width: 100%;
+            height: 232px;
+            background-color: #d6dec8;
+            background-image:
+                linear-gradient(45deg, rgba(168, 184, 158, 0.35) 25%, transparent 25%),
+                linear-gradient(-45deg, rgba(168, 184, 158, 0.35) 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, rgba(168, 184, 158, 0.35) 75%),
+                linear-gradient(-45deg, transparent 75%, rgba(168, 184, 158, 0.35) 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            border: 3px solid #121416;
+            box-shadow:
+                inset 3px 3px 8px rgba(0, 0, 0, 0.35),
+                inset -2px -2px 5px rgba(255, 255, 255, 0.25);
+            position: relative;
+            overflow: hidden;
+            color: var(--lcd-dark);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* Subtle LCD pixel matrix overlay */
+        .gbc-lcd::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(to right, rgba(20, 30, 20, 0.06) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(20, 30, 20, 0.06) 1px, transparent 1px);
+            background-size: 3px 3px;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        /* GBC Logo Colors */
+        .gbc-logo-text {
+            font-family: 'Arial Black', Impact, sans-serif;
+            font-style: italic;
+            font-size: 15px;
+            letter-spacing: 0.5px;
+            color: #9ea4ad;
+        }
+        .c-red { color: #e52554; font-style: normal; font-weight: 900; }
+        .c-purple { color: #7a49a5; font-style: normal; font-weight: 900; }
+        .c-green { color: #4bb543; font-style: normal; font-weight: 900; }
+        .c-yellow { color: #f2c94c; font-style: normal; font-weight: 900; }
+        .c-blue { color: #2d9cdb; font-style: normal; font-weight: 900; }
+
+        /* Embossed UnrealisticEncounter Oval */
+        .nintendo-oval {
+            border: 2px solid rgba(0, 0, 0, 0.18);
+            border-radius: 999px;
+            padding: 2px 14px;
+            font-family: Arial, sans-serif;
+            font-weight: 900;
+            font-size: 10px;
+            letter-spacing: 0.04em;
+            color: rgba(0, 0, 0, 0.26);
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.28);
+            margin: 12px auto 16px auto;
+            width: fit-content;
+            max-width: 90%;
+            white-space: nowrap;
+        }
+
+        /* Tactile D-Pad - Scaled Up */
+        .dpad-container {
+            width: 94px;
+            height: 94px;
+            position: relative;
+        }
+        .dpad-cross-v {
+            position: absolute;
+            left: 31px;
+            top: 0;
+            width: 32px;
+            height: 94px;
+            background: linear-gradient(145deg, #3a3d42, #222428);
+            border-radius: 6px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.45), inset 0 1px 2px rgba(255,255,255,0.2);
+        }
+        .dpad-cross-h {
+            position: absolute;
+            top: 31px;
+            left: 0;
+            width: 94px;
+            height: 32px;
+            background: linear-gradient(145deg, #3a3d42, #222428);
+            border-radius: 6px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.45), inset 0 1px 2px rgba(255,255,255,0.2);
+        }
+        .dpad-center {
+            position: absolute;
+            top: 33px;
+            left: 33px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 60% 60%, #1d1e22, #2f3237);
+            z-index: 2;
+        }
+        .dpad-btn {
+            position: absolute;
+            z-index: 3;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+        }
+        .dpad-btn:active {
+            background: rgba(255,255,255,0.08);
+        }
+
+        /* Tactile A and B Buttons - Scaled Up */
+        .ab-cluster {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transform: rotate(-24deg);
+            margin-top: 8px;
+        }
+        .gb-btn-round {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 32% 30%, #484b52 0%, #26282c 70%, #18191c 100%);
+            color: rgba(255, 255, 255, 0.42);
+            font-family: Arial, sans-serif;
+            font-weight: 900;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #16171a;
+            box-shadow:
+                0 5px 8px rgba(0, 0, 0, 0.48),
+                inset 0 2px 3px rgba(255, 255, 255, 0.25);
+            cursor: pointer;
+            transition: transform 0.06s ease, box-shadow 0.06s ease;
+            position: relative;
+        }
+        .gb-btn-round:hover {
+            filter: brightness(1.12);
+        }
+        .gb-btn-round:active, .gb-btn-round.pressed {
+            transform: translateY(3px) scale(0.96);
+            box-shadow:
+                0 1px 2px rgba(0, 0, 0, 0.6),
+                inset 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        .gb-btn-round.glow-hint {
+            box-shadow:
+                0 0 0 3px rgba(255, 235, 59, 0.78),
+                0 5px 12px rgba(0, 0, 0, 0.5);
+            animation: btnPulse 1.4s infinite;
+        }
+        @keyframes btnPulse {
+            0%, 100% { box-shadow: 0 0 0 2px rgba(255, 235, 59, 0.8), 0 5px 10px rgba(0,0,0,0.45); }
+            50% { box-shadow: 0 0 0 5px rgba(255, 235, 59, 0.25), 0 5px 10px rgba(0,0,0,0.45); }
+        }
+
+        /* Select / Start Rubber Pills - Scaled Up */
+        .pill-btn {
+            width: 42px;
+            height: 14px;
+            border-radius: 999px;
+            background: linear-gradient(180deg, #43464c, #232529);
+            box-shadow: 0 2px 3px rgba(0,0,0,0.45), inset 0 1px 1px rgba(255,255,255,0.2);
+            cursor: pointer;
+            transition: transform 0.06s ease;
+        }
+        .pill-btn:active, .pill-btn.pressed {
+            transform: translateY(1.5px);
+        }
+        .pill-btn.glow-hint {
+            box-shadow: 0 0 0 3px rgba(255, 235, 59, 0.8), 0 2px 4px rgba(0,0,0,0.5);
+            animation: btnPulse 1.4s infinite;
+        }
+
+        /* Speaker Grille - Scaled Up */
+        .speaker-grille {
+            display: grid;
+            grid-template-columns: repeat(6, 6px);
+            gap: 5px;
+            transform: rotate(-28deg);
+            opacity: 0.75;
+        }
+        .speaker-dot {
+            width: 4.5px;
+            height: 4.5px;
+            border-radius: 50%;
+            background: #1b1d1f;
+            box-shadow: inset 0 1px 1px rgba(0,0,0,0.9), 0 1px 0 rgba(255,255,255,0.25);
+        }
+
+        /* Data Packet Animation along Link Cable */
+        @keyframes packetFlowBidirectional {
+            0% { stroke-dashoffset: 240; opacity: 1; }
+            100% { stroke-dashoffset: 0; opacity: 1; }
+        }
+        .cable-data-active {
+            stroke-dasharray: 14 18;
+            animation: packetFlowBidirectional 0.45s linear infinite;
+        }
+
+        /* ===== v3 additions ===== */
+        .mb{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:60;padding:12px}
+        .mb.hidden{display:none !important}
+        .lp{background:#d6dec8;border:4px solid #121416;box-shadow:0 8px 0 rgba(0,0,0,.35);color:#1d2b1e;width:430px;max-width:96vw;max-height:92vh;overflow:auto;user-select:text}
+        .ltl{background:#1d2b1e;color:#d6dec8;padding:7px 10px;font-family:'Press Start 2P',monospace;font-size:9px;display:flex;justify-content:space-between;gap:8px}
+        .pb{font-family:'Press Start 2P',monospace;font-size:9px;background:#1d2b1e;color:#d6dec8;border:2px solid #0f1710;padding:8px 10px;box-shadow:0 3px 0 #0f1710;cursor:pointer}
+        .pb:active{transform:translateY(3px);box-shadow:none}
+        .pb.alt{background:#9eb38c;color:#0f1a10}
+        .orow{display:flex;gap:8px;font-size:20px;line-height:1.1;padding:2px 0}
+        .orow b{font-family:'Press Start 2P',monospace;font-size:8px;font-weight:400;width:62px;flex:none;padding-top:5px}
+        .orow span{word-break:break-all}
+        .help p{font-size:19px;line-height:1.15;margin:3px 0}
+        .help h4{font-family:'Press Start 2P',monospace;font-size:8px;margin:10px 0 3px;color:#00506a}
+        .cb{background:linear-gradient(160deg,#2d3035,#1d1f22);border-radius:16px 16px 42px 16px;padding:14px 18px 18px;box-shadow:inset 0 2px 4px rgba(255,255,255,.12),0 3px 6px rgba(0,0,0,.35);animation:chatIn .35s ease-out}
+        @keyframes chatIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+        .cl{font-size:20px;line-height:1.1;word-break:break-word;padding:1px 0;user-select:text;-webkit-user-select:text}
+        .cn{font-family:'Press Start 2P',monospace;font-size:9px}
+        .cn.me{color:#1d4a22}.cn.buddy{color:#00506a}
+        .cl.sys{font-size:16px;color:#536b54;text-align:center}
+        .cimg{display:block;max-height:130px;max-width:70%;margin:3px 0;border:2px solid #1d2b1e;cursor:zoom-in}
+        #chatLog::-webkit-scrollbar{width:10px}#chatLog::-webkit-scrollbar-track{background:#b7c4a5}#chatLog::-webkit-scrollbar-thumb{background:#1d2b1e}
+        .ep{position:absolute;bottom:100%;left:0;margin-bottom:8px;grid-template-columns:repeat(8,34px);background:#d6dec8;border:3px solid #121416;padding:4px;z-index:30;display:grid}
+        .ep.hidden{display:none}
+        .ep button{font-size:20px;height:34px}.ep button:hover{background:#9eb38c}
+        .hdrbtn{padding:2px 10px;border-radius:999px;background:rgba(255,255,255,.85);border:1px solid #d6d3d1;color:#44403c;font-weight:500;box-shadow:0 1px 2px rgba(0,0,0,.1);cursor:pointer}
+        /* ===== v4: shell colors + page backgrounds ===== */
+        .gbc-c{box-shadow:inset 3px 3px 6px rgba(255,255,255,.5),inset -5px -6px 12px rgba(0,0,0,.35),0 24px 42px rgba(0,0,0,.26),0 8px 14px rgba(0,0,0,.16)}
+        .gbc-c-purple{background:linear-gradient(145deg,#a273c9 0%,#7a49a5 18%,#7a49a5 85%,#58307c 100%)}
+        .gbc-c-yellow{background:linear-gradient(145deg,#ffe27a 0%,#f2c94c 18%,#f2c94c 85%,#c79a1c 100%)}
+        .gbc-c-orange{background:linear-gradient(145deg,#ffb877 0%,#f2994a 18%,#f2994a 85%,#c9701f 100%)}
+        .gbc-c-red{background:linear-gradient(145deg,#ff6a70 0%,#e0343c 18%,#e0343c 85%,#a31c24 100%)}
+        .gbc-c-tpurple{background:linear-gradient(145deg,rgba(150,90,200,.78) 0%,rgba(150,90,200,.5) 18%,rgba(150,90,200,.5) 85%,rgba(150,90,200,.7) 100%);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);border:1px solid rgba(255,255,255,.5)}
+        .gbc-c-tgreen{background:linear-gradient(145deg,rgba(70,200,110,.78) 0%,rgba(70,200,110,.5) 18%,rgba(70,200,110,.5) 85%,rgba(70,200,110,.7) 100%);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);border:1px solid rgba(255,255,255,.5)}
+        .gbc-c-twhite{background:linear-gradient(145deg,rgba(255,255,255,.78) 0%,rgba(255,255,255,.5) 18%,rgba(255,255,255,.5) 85%,rgba(255,255,255,.7) 100%);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);border:1px solid rgba(255,255,255,.5)}
+        .gbc-c-tblue{background:linear-gradient(145deg,rgba(110,200,255,.78) 0%,rgba(110,200,255,.5) 18%,rgba(110,200,255,.5) 85%,rgba(110,200,255,.7) 100%);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);border:1px solid rgba(255,255,255,.5)}
+        .bgdark .title-tradeboy{color:#f4efe6;text-shadow:0 2px 0 rgba(0,0,0,.7),0 4px 12px rgba(0,0,0,.5)}
+        #bgCanvas{position:fixed;inset:0;width:100%;height:100%;z-index:-1;image-rendering:pixelated;display:none}
+    </style>
+</head>
+<body class="relative flex flex-col items-center justify-between pt-12 sm:pt-4 pb-4 px-3 sm:px-6">
+    <canvas id="bgCanvas"></canvas>
+    <button id="helpBtn" class="pb fixed top-3 right-3 z-40" title="How to use TradeBoy">❓ HELP</button>
+
+    <!-- Header Title -->
+    <header class="w-full max-w-5xl flex flex-col items-center mb-3">
+        <h1 class="text-3xl sm:text-5xl font-black tracking-wide text-center select-none">
+            <span class="title-tradeboy">TRADEBOY </span>
+            <span class="c-red">C</span><span class="c-purple">O</span><span class="c-green">L</span><span class="c-yellow">O</span><span class="c-blue">R</span>
+        </h1>
+        <div class="flex flex-wrap items-center justify-center gap-2 mt-1.5 text-xs sm:text-sm font-sans text-stone-700">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-stone-800 text-amber-300 font-semibold shadow-sm">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                COPYPARTY-TURBO ENGINE (4x STRIPED LANES)
+            </span>
+            <button id="muteToggleBtn" class="px-2.5 py-0.5 rounded-full bg-white/85 hover:bg-white border border-stone-300 text-stone-700 font-medium shadow-sm transition cursor-pointer">
+                🔊 SFX: ON
+            </button>
+            <button id="demoLoopbackBtn" class="px-2.5 py-0.5 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-sm transition cursor-pointer" title="Test a live two-Game-Boy link solo right on this screen">
+                ⚡ Self-Link Test
+            </button>
+            <label class="hdrbtn inline-flex items-center gap-1.5" title="Accept every incoming file without asking (default off)">
+                <input type="checkbox" id="autoAccept" class="accent-emerald-600"> Auto-accept transfers
+            </label>
+            <span class="hdrbtn inline-flex items-center gap-1.5" title="Trading room music">
+                <button id="musicPrev" title="Previous track">◀</button>
+                <button id="musicBtn">🎵 MUSIC: OFF</button>
+                <button id="musicNext" title="Next track">▶</button>
+                <span id="musicName" class="pixel-font text-[8px]">1/3 TRADE CENTER</span>
+            </span>
+            <button id="bgBtn" class="hdrbtn" title="Change the page background">🖼️ BG: DEFAULT</button>
+        </div>
+    </header>
+
+    <!-- Main Dual Game Boy Arena -->
+    <main class="relative flex flex-col lg:flex-row items-center justify-center gap-7 lg:gap-20 my-auto w-full max-w-6xl">
+
+        <!-- Golden SVG Link Cable Connecting Left & Right Game Boys (Desktop Horizontal) -->
+        <div class="hidden lg:block absolute left-1/2 top-[152px] -translate-x-1/2 w-[186px] h-[96px] pointer-events-none z-0">
+            <svg width="186" height="96" viewBox="0 0 186 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="goldCableGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#b47b14"/>
+                        <stop offset="25%" stop-color="#f7d052"/>
+                        <stop offset="50%" stop-color="#ffe885"/>
+                        <stop offset="75%" stop-color="#e5aa24"/>
+                        <stop offset="100%" stop-color="#9e690b"/>
+                    </linearGradient>
+                    <linearGradient id="goldPlugGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#ffe680"/>
+                        <stop offset="50%" stop-color="#d49b1a"/>
+                        <stop offset="100%" stop-color="#7a4e05"/>
+                    </linearGradient>
+                </defs>
+                <!-- Left Golden Link Plug -->
+                <rect x="2" y="10" width="24" height="20" rx="3" fill="url(#goldPlugGrad)" stroke="#5c3a04" stroke-width="1.5"/>
+                <rect x="26" y="13" width="8" height="14" rx="1" fill="#e5b332" stroke="#5c3a04" stroke-width="1"/>
+                <!-- Main Golden Link Cable -->
+                <path id="linkCablePath" d="M 34,20 C 64,20 64,64 93,64 C 122,64 122,20 152,20" stroke="url(#goldCableGrad)" stroke-width="9" stroke-linecap="round"/>
+                <!-- Bright Gold Specular Highlight -->
+                <path d="M 34,17.5 C 64,17.5 64,61.5 93,61.5 C 122,61.5 122,17.5 152,17.5" stroke="#fff3b0" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
+                <!-- Animated High-Speed Golden/Amber Data Pulse -->
+                <path id="linkCablePulse" d="M 34,20 C 64,20 64,64 93,64 C 122,64 122,20 152,20" stroke="#fef08a" stroke-width="4" stroke-linecap="round" opacity="0"/>
+                <!-- Right Golden Link Plug -->
+                <rect x="152" y="13" width="8" height="14" rx="1" fill="#e5b332" stroke="#5c3a04" stroke-width="1"/>
+                <rect x="160" y="10" width="24" height="20" rx="3" fill="url(#goldPlugGrad)" stroke="#5c3a04" stroke-width="1.5"/>
+            </svg>
+        </div>
+
+        <!-- Mobile/Tablet Vertical Golden Link Cable Connector -->
+        <div class="lg:hidden flex items-center justify-center -my-3 z-0">
+            <div class="w-3.5 h-10 bg-gradient-to-b from-amber-300 via-yellow-500 to-amber-700 rounded-full shadow-md border border-amber-900 flex items-center justify-center">
+                <div id="mobileCablePulse" class="w-1.5 h-8 bg-yellow-100 rounded-full opacity-0 transition-opacity"></div>
+            </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- LEFT GAME BOY COLOR (KIWI GREEN): YOUR GAME BOY           -->
+        <!-- ========================================================= -->
+        <section aria-label="Left Game Boy - Your Console" class="gbc-shell gbc-kiwi z-10">
+            <div class="link-port link-port-left"></div>
+
+            <!-- Dark Screen Bezel -->
+            <div class="gbc-bezel">
+                <!-- Top White Banner Label -->
+                <div class="top-banner-tag">YOUR GAME BOY</div>
+
+                <div class="flex items-center gap-2.5">
+                    <!-- Left Power LED Indicator -->
+                    <div class="flex flex-col items-center justify-center -ml-1">
+                        <div class="flex items-center gap-1">
+                            <span class="power-led"></span>
+                            <span class="text-[9px] text-stone-400 font-sans tracking-tighter">)))</span>
+                        </div>
+                        <span class="text-[7px] text-stone-400 font-sans font-bold tracking-wider mt-1">POWER</span>
+                    </div>
+
+                    <!-- LCD Screen -->
+                    <div class="gbc-lcd p-2.5">
+                        <!-- Top Status Bar -->
+                        <div class="flex items-center justify-between border-b-2 border-[#394b3a] pb-1 text-xs font-bold z-10">
+                            <span id="leftHeaderTitle" class="pixel-font text-[8px] tracking-tighter text-[#1d2b1e]">YOUR NODE</span>
+                            <span id="leftStatusBadge" class="px-1.5 py-0.5 bg-[#1d2b1e] text-[#d6dec8] pixel-font text-[7px] rounded-sm">IDLE</span>
+                        </div>
+
+                        <!-- Dynamic Screen Content -->
+                        <div class="flex-1 flex flex-col items-center justify-center text-center z-10 my-1">
+
+                            <!-- STATE 1: IDLE -> PRESS START TO HOST -->
+                            <div id="leftIdleView" class="w-full flex flex-col items-center">
+                                <div class="text-[13px] font-bold text-[#2b3d2c] mb-1.5 leading-tight">
+                                    Want to host a trade room?
+                                </div>
+
+                                <button id="lcdHostBtn" class="w-full py-2 px-2 bg-[#1d2b1e] hover:bg-[#2f4531] active:translate-y-0.5 text-[#d6dec8] border-2 border-[#0f1710] rounded shadow cursor-pointer transition flex flex-col items-center justify-center gap-1">
+                                    <span class="pixel-font text-[8px] leading-relaxed tracking-tight animate-pulse">
+                                        PRESS START TO HOST
+                                    </span>
+                                </button>
+
+                                <!-- Retro Pixel Trade Table Sprite -->
+                                <div class="mt-2 flex items-center justify-center">
+                                    <svg width="96" height="36" viewBox="0 0 96 36">
+                                        <rect x="8" y="28" width="80" height="4" fill="#8fa382"/>
+                                        <rect x="20" y="6" width="12" height="10" fill="#1d2b1e"/>
+                                        <rect x="22" y="8" width="8" height="6" fill="#d6dec8"/>
+                                        <rect x="19" y="16" width="14" height="12" fill="#2f4830"/>
+                                        <rect x="37" y="14" width="22" height="14" fill="#3a4f3b" stroke="#1d2b1e" stroke-width="2"/>
+                                        <rect x="42" y="10" width="12" height="5" fill="#1d2b1e"/>
+                                        <circle cx="48" cy="6" r="2.5" fill="#1d2b1e">
+                                            <animate attributeName="opacity" values="1;0.2;1" dur="1.4s" repeatCount="indefinite"/>
+                                        </circle>
+                                    </svg>
+                                </div>
+                            </div>
+
+                            <!-- STATE 2: HOSTING -> DISPLAY GENERATED BUDDY CODE -->
+                            <div id="leftHostingView" class="hidden w-full flex flex-col items-center">
+                                <div class="pixel-font text-[8px] text-[#243625] mb-1">YOUR BUDDY CODE:</div>
+                                <div class="w-full bg-[#b7c4a5] border-2 border-[#1d2b1e] px-2 py-1.5 rounded flex items-center justify-between gap-1 shadow-inner">
+                                    <span id="hostBuddyCodeDisplay" class="pixel-font text-[12px] text-[#0f1a10] tracking-wider">----</span>
+                                    <button id="copyCodeBtn" class="px-1.5 py-1 bg-[#1d2b1e] hover:bg-[#334a35] text-[#d6dec8] pixel-font text-[7px] rounded cursor-pointer shrink-0" title="Copy Buddy Code">
+                                        COPY
+                                    </button>
+                                </div>
+                                <div id="hostingStatusText" class="pixel-font text-[8px] text-[#1d2b1e] mt-2 animate-pulse">
+                                    WAITING FOR BUDDY...
+                                </div>
+                                <div class="text-[12px] text-[#354936] mt-1 leading-tight">
+                                    Share code • [B] cancels host
+                                </div>
+                            </div>
+
+                            <!-- STATE 3: CONNECTED -> SELECT A FILE & PRESS [A] -->
+                            <div id="leftConnectedView" class="hidden w-full flex flex-col items-center">
+                                <div class="pixel-font text-[8px] text-[#112412] bg-[#9eb38c] px-2 py-0.5 border border-[#1d2b1e] mb-1.5">
+                                    SELECT A FILE
+                                </div>
+
+                                <!-- Hidden File Input -->
+                                <input type="file" id="fileInput" class="hidden" multiple>
+
+                                <!-- Tactile Choose File Button -->
+                                <button id="selectFileBtn" class="w-full py-1.5 px-2 bg-[#1d2b1e] hover:bg-[#2f4531] active:translate-y-0.5 text-[#d6dec8] border-2 border-[#0f1710] rounded shadow cursor-pointer flex items-center justify-center gap-1.5 transition">
+                                    <span class="text-sm">📁</span>
+                                    <span class="pixel-font text-[8px]">CHOOSE FILE</span>
+                                </button>
+
+                                <!-- Selected File Info -->
+                                <div id="selectedFileBox" class="w-full mt-1.5 bg-[#c2cfb2] border border-[#1d2b1e] px-2 py-1 rounded text-left">
+                                    <div id="selectedFileName" class="text-[14px] font-bold text-[#0f1a10] truncate leading-none">
+                                        No file selected
+                                    </div>
+                                    <div id="selectedFileMeta" class="text-[12px] text-[#354936] leading-tight mt-0.5">
+                                        Pick file, then press [A]
+                                    </div>
+                                </div>
+
+                                <!-- Outgoing Transfer Progress Bar -->
+                                <div id="leftTransferBox" class="hidden w-full mt-1.5">
+                                    <div class="flex justify-between text-[11px] font-bold text-[#0f1a10]">
+                                        <span id="leftProgressPct">0%</span>
+                                        <span id="leftSpeedText">0.0 MB/s</span>
+                                    </div>
+                                    <div class="w-full h-2.5 bg-[#9eb08e] border border-[#1d2b1e] p-0.5">
+                                        <div id="leftProgressBar" class="h-full bg-[#1d2b1e] transition-all duration-75" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Bottom Prompt Footer -->
+                        <div class="border-t border-[#4b614c] pt-0.5 flex justify-between items-center text-[12px] font-bold text-[#1d2b1e] z-10">
+                            <span id="leftFooterLeft">[START] HOST</span>
+                            <span id="leftFooterRight">[B] CANCEL</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GAME BOY COLOR Logo -->
+                <div class="text-center mt-2.5 select-none">
+                    <span class="gbc-logo-text">TRADEBOY </span>
+                    <span class="c-red">C</span><span class="c-purple">O</span><span class="c-green">L</span><span class="c-yellow">O</span><span class="c-blue">R</span>
+                </div>
+            </div>
+
+            <!-- Embossed UnrealisticEncounter Logo -->
+            <div class="nintendo-oval">UnrealisticEncounter</div>
+
+            <!-- Controls Area: D-Pad + A/B -->
+            <div class="flex items-center justify-between px-4 mt-2">
+                <!-- D-Pad -->
+                <div class="dpad-container" title="D-Pad">
+                    <div class="dpad-cross-v"></div>
+                    <div class="dpad-cross-h"></div>
+                    <div class="dpad-center"></div>
+                    <button class="dpad-btn top-0 left-[31px] w-[32px] h-[31px]" onclick="playBlip(320)"></button>
+                    <button class="dpad-btn bottom-0 left-[31px] w-[32px] h-[31px]" onclick="playBlip(280)"></button>
+                    <button class="dpad-btn left-0 top-[31px] w-[31px] h-[32px]" onclick="playBlip(300)"></button>
+                    <button class="dpad-btn right-0 top-[31px] w-[31px] h-[32px]" onclick="playBlip(340)"></button>
+                </div>
+
+                <!-- B & A Buttons -->
+                <div class="ab-cluster">
+                    <button id="leftBtnB" class="gb-btn-round" title="B Button: Cancel Host / Disconnect">B</button>
+                    <button id="leftBtnA" class="gb-btn-round" title="A Button: Send Selected File">A</button>
+                </div>
+            </div>
+
+            <!-- Select / Start + Speaker Grille -->
+            <div class="flex items-end justify-between pl-24 pr-3 mt-8">
+                <div class="flex gap-3.5">
+                    <div class="flex flex-col items-center">
+                        <button id="leftSelectBtn" class="pill-btn" title="SELECT: copy Buddy Code (hosting) / change chat name (linked)"></button>
+                        <span class="text-[9px] font-sans font-extrabold text-black/45 tracking-wider mt-1">SELECT</span>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <button id="leftStartBtn" class="pill-btn glow-hint" title="START: Host Trade Room"></button>
+                        <span class="text-[9px] font-sans font-extrabold text-black/45 tracking-wider mt-1">START</span>
+                    </div>
+                </div>
+
+                <!-- Speaker Grille -->
+                <div class="speaker-grille" aria-hidden="true">
+                    <div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div>
+                    <div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div>
+                    <div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div>
+                    <div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div>
+                    <div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- RIGHT GAME BOY COLOR (TEAL BLUE): BUDDY LINK / STATUS     -->
+        <!-- ========================================================= -->
+        <section aria-label="Right Game Boy - Enter Buddy Code and Link Status" class="gbc-shell gbc-teal z-10">
+            <div class="link-port link-port-right"></div>
+
+            <!-- Dark Screen Bezel -->
+            <div class="gbc-bezel">
+                <!-- Top White Banner Label -->
+                <div class="top-banner-tag">ENTER BUDDY CODE</div>
+
+                <div class="flex items-center gap-2.5">
+                    <!-- Left Power LED Indicator -->
+                    <div class="flex flex-col items-center justify-center -ml-1">
+                        <div class="flex items-center gap-1">
+                            <span class="power-led"></span>
+                            <span class="text-[9px] text-stone-400 font-sans tracking-tighter">)))</span>
+                        </div>
+                        <span class="text-[7px] text-stone-400 font-sans font-bold tracking-wider mt-1">POWER</span>
+                    </div>
+
+                    <!-- LCD Screen -->
+                    <div class="gbc-lcd p-2.5">
+                        <!-- Top Status Bar -->
+                        <div class="flex items-center justify-between border-b-2 border-[#394b3a] pb-1 text-xs font-bold z-10">
+                            <span class="pixel-font text-[8px] tracking-tighter text-[#1d2b1e]">LINK PORT</span>
+                            <span id="rightStatusBadge" class="px-1.5 py-0.5 bg-[#465947] text-[#d6dec8] pixel-font text-[7px] rounded-sm">OFFLINE</span>
+                        </div>
+
+                        <!-- Dynamic Screen Content -->
+                        <div class="flex-1 flex flex-col items-center justify-center text-center z-10 my-1">
+                            <!-- Buddy Code Input Box -->
+                            <div class="w-full">
+                                <div class="flex items-center justify-between text-[9px] pixel-font text-[#243625] mb-1">
+                                    <span>BUDDY CODE:</span>
+                                    <span id="codeLockIndicator" class="text-[8px]">🔓 UNLOCKED</span>
+                                </div>
+                                <input
+                                    type="text"
+                                    id="buddyCodeInput"
+                                    maxlength="12"
+                                    placeholder="e.g. PIKA-482"
+                                    autocomplete="off"
+                                    spellcheck="false"
+                                    class="w-full bg-[#e3ebd6] disabled:bg-[#b5c2a4] disabled:text-[#344635] disabled:cursor-not-allowed border-2 border-[#1d2b1e] px-2 py-1.5 rounded pixel-font text-[11px] text-[#0f1a10] uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-[#1d2b1e] transition text-center"
+                                />
+                            </div>
+
+                            <!-- STATE A: IDLE / HOSTING / LINKING -->
+                            <div id="rightDisconnectedView" class="w-full mt-2 flex flex-col items-center">
+                                <div id="rightConnectionMsg" class="pixel-font text-[8px] text-[#1d2b1e] leading-relaxed">
+                                    PRESS [A] TO LINK
+                                </div>
+                                <div id="rightSubMsg" class="text-[12px] text-[#3a4f3b] mt-0.5">
+                                    Or press START on Left GB to host
+                                </div>
+                            </div>
+
+                            <!-- STATE B: CONNECTED! (Shown on BOTH Host & Joiner Right Game Boys) -->
+                            <div id="rightConnectedView" class="hidden w-full mt-1.5 flex flex-col items-center">
+                                <div class="w-full py-1 bg-[#1d2b1e] text-[#d6dec8] pixel-font text-[10px] tracking-wider rounded-sm shadow">
+                                    CONNECTED!
+                                </div>
+
+                                <!-- Animated Pixel Trade Room Trainers -->
+                                <div id="rightTrainersGraphic" class="mt-1 flex items-center justify-center">
+                                    <svg width="116" height="36" viewBox="0 0 116 36">
+                                        <!-- Floor Shadow -->
+                                        <rect x="10" y="29" width="96" height="4" fill="#8fa382"/>
+                                        <!-- Trainer Left -->
+                                        <rect x="20" y="5" width="12" height="10" fill="#1d2b1e"/>
+                                        <rect x="22" y="7" width="8" height="6" fill="#d6dec8"/>
+                                        <rect x="19" y="15" width="14" height="13" fill="#1d2b1e"/>
+                                        <!-- Link Machine -->
+                                        <rect x="44" y="12" width="28" height="16" fill="#465c47" stroke="#1d2b1e" stroke-width="2"/>
+                                        <rect x="50" y="8" width="16" height="4" fill="#1d2b1e"/>
+                                        <!-- Blinking Pokeball / Data Spark -->
+                                        <circle cx="58" cy="4" r="2.5" fill="#1d2b1e">
+                                            <animate attributeName="opacity" values="1;0.15;1" dur="0.9s" repeatCount="indefinite"/>
+                                        </circle>
+                                        <!-- Trainer Right -->
+                                        <rect x="84" y="5" width="12" height="10" fill="#1d2b1e"/>
+                                        <rect x="86" y="7" width="8" height="6" fill="#d6dec8"/>
+                                        <rect x="83" y="15" width="14" height="13" fill="#2e4730"/>
+                                    </svg>
+                                </div>
+
+                                <!-- Incoming Download Progress & Status -->
+                                <div id="rightReceiveBox" class="hidden w-full mt-1">
+                                    <div class="flex justify-between text-[11px] font-bold text-[#0f1a10]">
+                                        <span id="rightRecvFileName" class="truncate max-w-[125px]">Receiving...</span>
+                                        <span id="rightRecvPct">0%</span>
+                                    </div>
+                                    <div class="w-full h-2.5 bg-[#9eb08e] border border-[#1d2b1e] p-0.5">
+                                        <div id="rightProgressBar" class="h-full bg-[#1d2b1e] transition-all duration-75" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bottom Prompt Footer -->
+                        <div class="border-t border-[#4b614c] pt-0.5 flex justify-between items-center text-[12px] font-bold text-[#1d2b1e] z-10">
+                            <span>[A] CONNECT</span>
+                            <span>[B] CANCEL</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GAME BOY COLOR Logo -->
+                <div class="text-center mt-2.5 select-none">
+                    <span class="gbc-logo-text">TRADEBOY </span>
+                    <span class="c-red">C</span><span class="c-purple">O</span><span class="c-green">L</span><span class="c-yellow">O</span><span class="c-blue">R</span>
+                </div>
+            </div>
+
+            <!-- Embossed UnrealisticEncounter Logo -->
+            <div class="nintendo-oval">UnrealisticEncounter</div>
+
+            <!-- Controls Area: D-Pad + A/B -->
+            <div class="flex items-center justify-between px-4 mt-2">
+                <!-- D-Pad -->
+                <div class="dpad-container" title="D-Pad">
+                    <div class="dpad-cross-v"></div>
+                    <div class="dpad-cross-h"></div>
+                    <div class="dpad-center"></div>
+                    <button class="dpad-btn top-0 left-[31px] w-[32px] h-[31px]" onclick="playBlip(320)"></button>
+                    <button class="dpad-btn bottom-0 left-[31px] w-[32px] h-[31px]" onclick="playBlip(280)"></button>
+                    <button class="dpad-btn left-0 top-[31px] w-[31px] h-[32px]" onclick="playBlip(300)"></button>
+                    <button class="dpad-btn right-0 top-[31px] w-[31px] h-[32px]" onclick="playBlip(340)"></button>
+                </div>
+
+                <!-- B & A Buttons -->
+                <div class="ab-cluster">
+                    <button id="rightBtnB" class="gb-btn-round" title="B Button: Cancel Connection / Disconnect">B</button>
+                    <button id="rightBtnA" class="gb-btn-round" title="A Button: Connect to Buddy Code">A</button>
+                </div>
+            </div>
+
+            <!-- Select / Start + Speaker Grille -->
+            <div class="flex items-end justify-between pl-24 pr-3 mt-8">
+                <div class="flex gap-3.5">
+                    <div class="flex flex-col items-center">
+                        <button id="rightSelectBtn" class="pill-btn" title="Focus Buddy Code Input"></button>
+                        <span class="text-[9px] font-sans font-extrabold text-black/45 tracking-wider mt-1">SELECT</span>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <button id="rightStartBtn" class="pill-btn" title="Connect to Buddy Code"></button>
+                        <span class="text-[9px] font-sans font-extrabold text-black/45 tracking-wider mt-1">START</span>
+                    </div>
+                </div>
+
+                <!-- Speaker Grille -->
+                <div class="speaker-grille" aria-hidden="true">
+                    <div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div>
+                    <div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div>
+                    <div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div>
+                    <div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div>
+                    <div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div><div class="speaker-dot"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Incoming file prompt -->
+    <div id="offerModal" class="mb hidden">
+        <div class="lp">
+            <div class="ltl"><span>📡 INCOMING TRANSFER</span><span id="offQ"></span></div>
+            <div class="p-3">
+                <p class="text-[22px] leading-tight mb-2"><b id="offFrom">Buddy</b> wants to send you a file. Do you accept?</p>
+                <div class="bg-[#c2cfb2] border-2 border-[#1d2b1e] p-2">
+                    <div class="orow"><b>NAME</b><span id="offName"></span></div>
+                    <div class="orow"><b>TYPE</b><span id="offType"></span></div>
+                    <div class="orow"><b>SIZE</b><span id="offSize"></span></div>
+                    <div class="orow"><b>MODIFIED</b><span id="offMod"></span></div>
+                    <div class="orow"><b>ITEM</b><span id="offItem"></span></div>
+                </div>
+                <div id="offWarn" class="hidden mt-2 text-[18px] leading-tight text-[#7a1f1f]">⚠ This looks like a program/script. Only accept it from someone you trust!</div>
+                <div class="flex gap-2 mt-3">
+                    <button id="offYes" class="pb flex-1">✔ ACCEPT</button>
+                    <button id="offNo" class="pb alt flex-1">✖ DECLINE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat name -->
+    <div id="nameModal" class="mb hidden">
+        <div class="lp" style="width:360px">
+            <div class="ltl"><span>CHAT NAME</span></div>
+            <div class="p-3">
+                <p class="text-[20px] leading-tight mb-2">Pick the name your buddy sees. Leave blank to go back to "You".</p>
+                <input id="nameInput" maxlength="14" autocomplete="off" class="w-full bg-[#e3ebd6] border-2 border-[#1d2b1e] px-2 py-1 text-[22px] focus:outline-none" style="user-select:text">
+                <div class="flex gap-2 mt-3">
+                    <button id="nameSave" class="pb flex-1">SAVE</button>
+                    <button id="nameReset" class="pb alt">RESET</button>
+                    <button id="nameCancel" class="pb alt">CANCEL</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help -->
+    <div id="helpModal" class="mb hidden">
+        <div class="lp help" style="width:560px">
+            <div class="ltl"><span>❓ HOW TO TRADE</span><button id="helpClose" style="color:#d6dec8">✖</button></div>
+            <div class="p-3">
+                <h4>1. LINK UP</h4>
+                <p><b>Host:</b> press START on the green Game Boy to get a Buddy Code and share it.</p>
+                <p><b>Buddy:</b> type the code on the teal Game Boy and press A.</p>
+                <h4>2. SEND FILES</h4>
+                <p>Once linked, either player picks a file on the green Game Boy and presses A. The other player sees what is coming (name, type, size...) and chooses to accept or decline before anything is sent.</p>
+                <p>Tick <b>Auto-accept transfers</b> at the top to skip the prompts (off by default).</p>
+                <h4>3. CHAT</h4>
+                <p>A chat box opens under the Game Boys when you are linked. Use 😀 for emojis and 🖼️ to send a picture (you can also paste one).</p>
+                <p>Press <b>SELECT</b> on the green Game Boy (or ✏ NAME) to change the name your buddy sees.</p>
+                <h4>4. MUSIC &amp; SOUND</h4>
+                <p>🎵 MUSIC plays one of 3 looping trading room tracks (◀ ▶ to change). SFX controls the beeps.</p>
+                <h4>5. LOOKS</h4>
+                <p><b>🖼️ BG</b> cycles the page background: default, color cycle, XP bliss, beach, Poke Center, Poke Town, Tetris and Final Fantasy.</p>
+                <p>Press <b>left / right on a D-Pad</b> to change that Game Boy's color (purple, yellow, orange, red and four see-through shells).</p>
+                <h4>6. TESTING SOLO</h4>
+                <p>⚡ Self-Link Test connects the two Game Boys to each other so you can try everything alone.</p>
+                <p>[B] on either Game Boy disconnects.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="lightbox" class="mb hidden" style="cursor:zoom-out"><img id="lbImg" alt="" style="max-width:92vw;max-height:88vh;border:4px solid #121416;background:#fff"></div>
+
+    <!-- Status Toast Banner -->
+    <div id="toastBanner" class="fixed bottom-4 right-4 z-50 hidden max-w-sm bg-stone-900 text-amber-200 border-2 border-amber-400 px-4 py-2.5 rounded-lg shadow-xl font-sans text-sm flex items-center gap-2.5">
+        <span id="toastIcon">⚡</span>
+        <span id="toastMessage">Ready to trade!</span>
+    </div>
+
+    <!-- Link Chat -->
+    <section id="chatSection" class="hidden w-full max-w-[864px] mt-6" aria-label="Link Chat">
+        <div class="cb">
+            <div class="top-banner-tag">LINK CHAT</div>
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-2 pixel-font text-[8px] text-stone-300">
+                <span>YOU: <b id="chatMe" class="text-lime-300">YOU</b>
+                    <button id="nameBtn" class="pb alt" style="font-size:7px;padding:3px 6px">✏ NAME</button>
+                    <span class="opacity-60 hidden sm:inline">or press SELECT on the green Game Boy</span></span>
+                <span>BUDDY: <b id="chatBud" class="text-sky-300">BUDDY</b></span>
+            </div>
+            <div class="gbc-lcd" style="height:210px">
+                <div id="chatLog" class="flex-1 overflow-y-auto p-2 z-10 text-left" style="min-height:0"></div>
+            </div>
+            <div class="relative flex gap-2 mt-2.5 items-stretch">
+                <div id="emojiPop" class="ep hidden"></div>
+                <button id="emojiBtn" class="pb" title="Emojis">😀</button>
+                <button id="chatImgBtn" class="pb" title="Send an image">🖼️</button>
+                <input type="file" id="chatImgIn" accept="image/*" class="hidden">
+                <input id="chatInput" maxlength="300" autocomplete="off" placeholder="Type a message..." class="flex-1 min-w-0 bg-[#e3ebd6] border-2 border-[#1d2b1e] px-2 text-[20px] focus:outline-none" style="user-select:text;-webkit-user-select:text">
+                <button id="chatSend" class="pb">SEND</button>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        /**
+         * TRADING BUDDY - Bidirectional PeerJS + Copyparty-Inspired Striped File Transfer
+         */
+
+        // ==========================================
+        // 1. 8-BIT RETRO WEB AUDIO SYNTHESIZER
+        // ==========================================
+        const AudioEngine = (() => {
+            let ctx = null;
+            let muted = false;
+
+            function ensureCtx() {
+                if (!ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    ctx = new AudioContext();
+                }
+                if (ctx.state === 'suspended') ctx.resume();
+            }
+
+            function playTone(freq, duration = 0.08, type = 'square', gainVal = 0.07, delay = 0) {
+                if (muted) return;
+                try {
+                    ensureCtx();
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
+                    gain.gain.setValueAtTime(gainVal, ctx.currentTime + delay);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + delay + duration);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(ctx.currentTime + delay);
+                    osc.stop(ctx.currentTime + delay + duration);
+                } catch (e) { /* Ignore until user gesture */ }
+            }
+
+            return {
+                blip: (freq = 520) => playTone(freq, 0.06, 'square', 0.06),
+                hostStart: () => {
+                    playTone(440, 0.07, 'square', 0.07, 0);
+                    playTone(587.33, 0.11, 'square', 0.07, 0.07);
+                },
+                cancel: () => {
+                    playTone(320, 0.07, 'square', 0.07, 0);
+                    playTone(210, 0.11, 'square', 0.07, 0.06);
+                },
+                connectChime: () => {
+                    playTone(523.25, 0.08, 'square', 0.08, 0);     // C5
+                    playTone(659.25, 0.08, 'square', 0.08, 0.08);  // E5
+                    playTone(783.99, 0.08, 'square', 0.08, 0.16);  // G5
+                    playTone(1046.50, 0.22, 'square', 0.09, 0.24); // C6
+                },
+                transferComplete: () => {
+                    playTone(587.33, 0.09, 'triangle', 0.1, 0);
+                    playTone(783.99, 0.09, 'triangle', 0.1, 0.09);
+                    playTone(987.77, 0.09, 'triangle', 0.1, 0.18);
+                    playTone(1174.66, 0.28, 'triangle', 0.11, 0.27);
+                },
+                getCtx: () => { ensureCtx(); return ctx; },
+                msgIn: () => { playTone(880, 0.05, 'square', 0.05, 0); playTone(1174.66, 0.07, 'square', 0.05, 0.06); },
+                prompt: () => { [659.25, 783.99, 659.25, 987.77].forEach((f, i) => playTone(f, 0.09, 'square', 0.07, i * 0.1)); },
+                toggleMute: () => {
+                    muted = !muted;
+                    return muted;
+                }
+            };
+        })();
+
+        window.playBlip = (f) => AudioEngine.blip(f);
+
+        // ==========================================
+        // 2. APPLICATION STATE & DOM REFERENCES
+        // ==========================================
+        const PEER_PREFIX = 'tb-gbc-link-v2-';
+        const WORD_BANK = [
+            'PIKA', 'LINK', 'SURF', 'VOLT', 'CHAR', 'BULB', 'MEWT', 'EEVE',
+            'GENG', 'SNOR', 'LUGI', 'HOOH', 'CELE', 'ZAPD', 'MOLT', 'ARTI'
+        ];
+
+        const state = {
+            mode: 'IDLE',           // 'IDLE' | 'HOSTING' | 'JOINING' | 'CONNECTED'
+            buddyCode: '',
+            peer: null,
+            secondaryPeer: null,    // Used for Self-Link Test
+            connections: [],        // Up to 4 parallel PeerJS DataConnections
+            selectedFiles: [],
+            isTransferring: false,
+            incomingTransfers: {},
+            connectTimeout: null
+        };
+
+        const el = {
+            leftHeaderTitle: document.getElementById('leftHeaderTitle'),
+            leftStatusBadge: document.getElementById('leftStatusBadge'),
+            leftIdleView: document.getElementById('leftIdleView'),
+            leftHostingView: document.getElementById('leftHostingView'),
+            leftConnectedView: document.getElementById('leftConnectedView'),
+            lcdHostBtn: document.getElementById('lcdHostBtn'),
+            hostBuddyCodeDisplay: document.getElementById('hostBuddyCodeDisplay'),
+            copyCodeBtn: document.getElementById('copyCodeBtn'),
+            hostingStatusText: document.getElementById('hostingStatusText'),
+            fileInput: document.getElementById('fileInput'),
+            selectFileBtn: document.getElementById('selectFileBtn'),
+            selectedFileName: document.getElementById('selectedFileName'),
+            selectedFileMeta: document.getElementById('selectedFileMeta'),
+            leftTransferBox: document.getElementById('leftTransferBox'),
+            leftProgressPct: document.getElementById('leftProgressPct'),
+            leftSpeedText: document.getElementById('leftSpeedText'),
+            leftProgressBar: document.getElementById('leftProgressBar'),
+            leftFooterLeft: document.getElementById('leftFooterLeft'),
+            leftFooterRight: document.getElementById('leftFooterRight'),
+            leftBtnA: document.getElementById('leftBtnA'),
+            leftBtnB: document.getElementById('leftBtnB'),
+            leftSelectBtn: document.getElementById('leftSelectBtn'),
+            leftStartBtn: document.getElementById('leftStartBtn'),
+
+            rightStatusBadge: document.getElementById('rightStatusBadge'),
+            buddyCodeInput: document.getElementById('buddyCodeInput'),
+            codeLockIndicator: document.getElementById('codeLockIndicator'),
+            rightDisconnectedView: document.getElementById('rightDisconnectedView'),
+            rightConnectionMsg: document.getElementById('rightConnectionMsg'),
+            rightSubMsg: document.getElementById('rightSubMsg'),
+            rightConnectedView: document.getElementById('rightConnectedView'),
+            rightTrainersGraphic: document.getElementById('rightTrainersGraphic'),
+            rightReceiveBox: document.getElementById('rightReceiveBox'),
+            rightRecvFileName: document.getElementById('rightRecvFileName'),
+            rightRecvPct: document.getElementById('rightRecvPct'),
+            rightProgressBar: document.getElementById('rightProgressBar'),
+            rightBtnA: document.getElementById('rightBtnA'),
+            rightBtnB: document.getElementById('rightBtnB'),
+            rightSelectBtn: document.getElementById('rightSelectBtn'),
+            rightStartBtn: document.getElementById('rightStartBtn'),
+
+            linkCablePulse: document.getElementById('linkCablePulse'),
+            mobileCablePulse: document.getElementById('mobileCablePulse'),
+            muteToggleBtn: document.getElementById('muteToggleBtn'),
+            demoLoopbackBtn: document.getElementById('demoLoopbackBtn'),
+            toastBanner: document.getElementById('toastBanner'),
+            toastIcon: document.getElementById('toastIcon'),
+            toastMessage: document.getElementById('toastMessage')
+        };
+
+        let toastTimer = null;
+        function showToast(msg, icon = '⚡') {
+            el.toastMessage.textContent = msg;
+            el.toastIcon.textContent = icon;
+            el.toastBanner.classList.remove('hidden');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => el.toastBanner.classList.add('hidden'), 3800);
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function animateButtonPress(btn) {
+            if (!btn) return;
+            btn.classList.add('pressed');
+            setTimeout(() => btn.classList.remove('pressed'), 130);
+        }
+
+        function setCableTransferAnimation(active) {
+            if (active) {
+                el.linkCablePulse.setAttribute('opacity', '1');
+                el.linkCablePulse.classList.add('cable-data-active');
+                el.mobileCablePulse.classList.remove('opacity-0');
+                el.mobileCablePulse.classList.add('opacity-100', 'animate-pulse');
+            } else {
+                el.linkCablePulse.setAttribute('opacity', '0');
+                el.linkCablePulse.classList.remove('cable-data-active');
+                el.mobileCablePulse.classList.add('opacity-0');
+                el.mobileCablePulse.classList.remove('opacity-100', 'animate-pulse');
+            }
+        }
+
+        function generateBuddyCode() {
+            const word = WORD_BANK[Math.floor(Math.random() * WORD_BANK.length)];
+            const num = Math.floor(100 + Math.random() * 900);
+            return `${word}-${num}`;
+        }
+
+        // ICE Configuration with Google & Cloudflare STUN for reliable LAN & Internet NAT traversal
+        const ICE_CONFIG = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun.cloudflare.com:3478' }
+            ]
+        };
+
+        // ==========================================
+        // 3. UI STATE MACHINE
+        // ==========================================
+        function resetToIdle(playSound = true) {
+            if (playSound) AudioEngine.cancel();
+            clearTimeout(state.connectTimeout);
+
+            state.connections.forEach(c => { try { c.close(); } catch(e) {} });
+            state.connections = [];
+
+            if (state.peer) { try { state.peer.destroy(); } catch(e) {} state.peer = null; }
+            if (state.secondaryPeer) { try { state.secondaryPeer.destroy(); } catch(e) {} state.secondaryPeer = null; }
+
+            state.mode = 'IDLE';
+            state.buddyCode = '';
+            state.isTransferring = false;
+            state.incomingTransfers = {};
+            setCableTransferAnimation(false);
+
+            // Reset Left Game Boy
+            el.leftHeaderTitle.textContent = 'YOUR NODE';
+            el.leftStatusBadge.textContent = 'IDLE';
+            el.leftIdleView.classList.remove('hidden');
+            el.leftHostingView.classList.add('hidden');
+            el.leftConnectedView.classList.add('hidden');
+            el.leftTransferBox.classList.add('hidden');
+            el.leftFooterLeft.textContent = '[START] HOST';
+            el.leftFooterRight.textContent = '[B] CANCEL';
+            el.leftStartBtn.classList.add('glow-hint');
+            el.leftBtnA.classList.remove('glow-hint');
+
+            // Reset Right Game Boy
+            el.rightStatusBadge.textContent = 'OFFLINE';
+            el.rightStatusBadge.className = 'px-1.5 py-0.5 bg-[#465947] text-[#d6dec8] pixel-font text-[7px] rounded-sm';
+            el.buddyCodeInput.disabled = false;
+            el.buddyCodeInput.value = '';
+            el.codeLockIndicator.textContent = '🔓 UNLOCKED';
+            el.rightDisconnectedView.classList.remove('hidden');
+            el.rightConnectedView.classList.add('hidden');
+            el.rightConnectionMsg.textContent = 'PRESS [A] TO LINK';
+            el.rightSubMsg.textContent = 'Or press START on Left GB to host';
+            el.rightReceiveBox.classList.add('hidden');
+            el.rightTrainersGraphic.classList.remove('hidden');
+            el.rightBtnA.classList.remove('glow-hint');
+        }
+
+        // ==========================================
+        // 4. HOSTING MODE (LEFT START OR LCD CLICK)
+        // ==========================================
+        function startHostingMode(customCode = null) {
+            if (state.mode !== 'IDLE') {
+                if (state.mode === 'HOSTING') {
+                    copyBuddyCodeToClipboard();
+                }
+                return;
+            }
+
+            if (typeof Peer === 'undefined') {
+                showToast('PeerJS library still loading—check internet connection.', '⚠️');
+                return;
+            }
+
+            AudioEngine.hostStart();
+            state.mode = 'HOSTING';
+            const code = customCode || generateBuddyCode();
+            state.buddyCode = code;
+
+            // Update Left Game Boy to Hosting Screen
+            el.leftHeaderTitle.textContent = 'HOST MODE';
+            el.leftStatusBadge.textContent = 'HOSTING';
+            el.leftIdleView.classList.add('hidden');
+            el.leftHostingView.classList.remove('hidden');
+            el.hostBuddyCodeDisplay.textContent = code;
+            el.hostingStatusText.textContent = 'REGISTERING...';
+            el.leftFooterLeft.textContent = '[SEL] COPY';
+            el.leftFooterRight.textContent = '[B] CANCEL';
+            el.leftStartBtn.classList.remove('glow-hint');
+
+            // Lock Right Game Boy Input so Host doesn't enter a code
+            el.rightStatusBadge.textContent = 'HOSTING';
+            el.buddyCodeInput.value = 'HOSTING MODE';
+            el.buddyCodeInput.disabled = true;
+            el.codeLockIndicator.textContent = '🔒 LOCKED';
+            el.rightConnectionMsg.textContent = 'WAITING FOR BUDDY';
+            el.rightSubMsg.textContent = 'Share code from Left Game Boy';
+
+            const fullPeerId = `${PEER_PREFIX}${code}`;
+            const peer = new Peer(fullPeerId, {
+                debug: 0,
+                config: ICE_CONFIG
+            });
+            state.peer = peer;
+
+            peer.on('open', () => {
+                if (state.mode !== 'HOSTING') return;
+                el.hostingStatusText.textContent = 'WAITING FOR BUDDY...';
+                showToast(`Hosting! Share Buddy Code ${code} with your friend.`, '📡');
+            });
+
+            peer.on('connection', (conn) => {
+                registerDataConnection(conn);
+            });
+
+            peer.on('error', (err) => {
+                if (err.type === 'unavailable-id' && state.mode === 'HOSTING') {
+                    // Collision on random code; retry automatically with a fresh code
+                    peer.destroy();
+                    state.mode = 'IDLE';
+                    startHostingMode();
+                } else {
+                    showToast(`Host error: ${err.type || err.message}`, '❌');
+                    resetToIdle(true);
+                }
+            });
+        }
+
+        // ==========================================
+        // 5. JOINING MODE (ENTER BUDDY CODE + [A])
+        // ==========================================
+        function joinBuddyCode() {
+            if (state.mode === 'CONNECTED') {
+                showToast('Already connected! Press [B] to disconnect.', '🔒');
+                return;
+            }
+            if (state.mode === 'HOSTING') {
+                showToast('You are currently hosting! Press [B] first if you want to join instead.', '📡');
+                return;
+            }
+            if (state.mode === 'JOINING') return;
+
+            const rawCode = el.buddyCodeInput.value.trim().toUpperCase();
+            if (!rawCode || rawCode.length < 4) {
+                AudioEngine.cancel();
+                el.buddyCodeInput.focus();
+                showToast('Enter your host\'s Buddy Code (e.g. PIKA-482) first!', '⚠️');
+                return;
+            }
+
+            if (typeof Peer === 'undefined') {
+                showToast('PeerJS library still loading—check internet connection.', '⚠️');
+                return;
+            }
+
+            state.mode = 'JOINING';
+            state.buddyCode = rawCode;
+
+            // Lock Right Game Boy input while linking
+            el.buddyCodeInput.disabled = true;
+            el.codeLockIndicator.textContent = '🔒 LOCKED';
+            el.rightStatusBadge.textContent = 'LINKING';
+            el.rightConnectionMsg.textContent = 'LINKING...';
+            el.rightSubMsg.textContent = `Dialing ${rawCode}...`;
+            el.leftStartBtn.classList.remove('glow-hint');
+
+            const peer = new Peer({
+                debug: 0,
+                config: ICE_CONFIG
+            });
+            state.peer = peer;
+
+            // Timeout guard if buddy code doesn't exist or firewall blocks handshake
+            state.connectTimeout = setTimeout(() => {
+                if (state.mode === 'JOINING') {
+                    showToast(`Could not reach ${rawCode}. Verify code & press [A] to retry.`, '⏱️');
+                    cancelJoinOnly();
+                }
+            }, 15000);
+
+            peer.on('open', () => {
+                if (state.mode !== 'JOINING') return;
+                const targetId = `${PEER_PREFIX}${rawCode}`;
+
+                // Open 4 parallel WebRTC DataConnections (Copyparty multi-lane striping)
+                for (let lane = 0; lane < 4; lane++) {
+                    const conn = peer.connect(targetId, {
+                        label: `lane-${lane}`,
+                        reliable: true,
+                        serialization: 'raw'
+                    });
+                    registerDataConnection(conn);
+                }
+            });
+
+            peer.on('error', (err) => {
+                clearTimeout(state.connectTimeout);
+                if (state.mode === 'JOINING') {
+                    showToast(`Buddy Code "${rawCode}" not found or unreachable.`, '❌');
+                    cancelJoinOnly();
+                }
+            });
+        }
+
+        function cancelJoinOnly() {
+            AudioEngine.cancel();
+            clearTimeout(state.connectTimeout);
+            state.connections.forEach(c => { try { c.close(); } catch(e) {} });
+            state.connections = [];
+            if (state.peer) { try { state.peer.destroy(); } catch(e) {} state.peer = null; }
+
+            state.mode = 'IDLE';
+            el.buddyCodeInput.disabled = false;
+            el.codeLockIndicator.textContent = '🔓 UNLOCKED';
+            el.rightStatusBadge.textContent = 'OFFLINE';
+            el.rightConnectionMsg.textContent = 'PRESS [A] TO LINK';
+            el.rightSubMsg.textContent = 'Code unlocked — type & press [A]';
+            el.leftStartBtn.classList.add('glow-hint');
+            el.buddyCodeInput.focus();
+        }
+
+        // ==========================================
+        // 6. MULTI-LANE CONNECTION & CONNECTED STATE
+        // ==========================================
+        function registerDataConnection(conn) {
+            conn.on('open', () => {
+                if (!state.connections.includes(conn)) {
+                    state.connections.push(conn);
+                }
+
+                // Configure underlying WebRTC RTCDataChannel for high-water backpressure
+                if (conn.dataChannel) {
+                    conn.dataChannel.binaryType = 'arraybuffer';
+                    conn.dataChannel.bufferedAmountLowThreshold = 512 * 1024;
+                }
+
+                // Trigger CONNECTED state as soon as the first lane opens
+                if (state.mode !== 'CONNECTED') {
+                    enterConnectedState();
+                }
+            });
+
+            conn.on('data', (data) => {
+                handleIncomingPacket(data);
+            });
+
+            conn.on('close', () => {
+                state.connections = state.connections.filter(c => c !== conn);
+                if (state.connections.length === 0 && state.mode === 'CONNECTED') {
+                    showToast('Buddy disconnected from the Link Cable.', '🔌');
+                    resetToIdle(true);
+                }
+            });
+        }
+
+        function enterConnectedState() {
+            clearTimeout(state.connectTimeout);
+            state.mode = 'CONNECTED';
+            AudioEngine.connectChime();
+
+            // 1. BOTH users' Right Game Boys lock input & show "CONNECTED!"
+            el.buddyCodeInput.disabled = true;
+            if (!el.buddyCodeInput.value || el.buddyCodeInput.value === 'HOSTING MODE') {
+                el.buddyCodeInput.value = state.buddyCode || 'LINK-ACTIVE';
+            }
+            el.codeLockIndicator.textContent = '🔒 LOCKED';
+            el.rightStatusBadge.textContent = 'LINKED';
+            el.rightStatusBadge.className = 'px-1.5 py-0.5 bg-[#1d2b1e] text-[#d6dec8] pixel-font text-[7px] rounded-sm';
+            el.rightDisconnectedView.classList.add('hidden');
+            el.rightConnectedView.classList.remove('hidden');
+            el.rightBtnA.classList.remove('glow-hint');
+
+            // 2. BOTH users' Left Game Boys show "SELECT A FILE" for bidirectional transfers
+            el.leftHeaderTitle.textContent = 'TRADE READY';
+            el.leftStatusBadge.textContent = 'LINKED';
+            el.leftIdleView.classList.add('hidden');
+            el.leftHostingView.classList.add('hidden');
+            el.leftConnectedView.classList.remove('hidden');
+            el.leftFooterLeft.textContent = '[A] SEND [SEL] NAME';
+            el.leftFooterRight.textContent = '[B] DISCONN';
+            el.leftStartBtn.classList.remove('glow-hint');
+
+            showToast('CONNECTED! Both players can now select & send files!', '🎮');
+        }
+
+        // ==========================================
+        // 7. SELF-LINK TEST (SOLO TWO-PEER LOOPBACK)
+        // ==========================================
+        function runSelfLinkTest() {
+            if (state.mode !== 'IDLE') {
+                resetToIdle(false);
+            }
+            if (typeof Peer === 'undefined') {
+                showToast('PeerJS still loading—please wait a second.', '⚠️');
+                return;
+            }
+
+            AudioEngine.hostStart();
+            const testCode = generateBuddyCode();
+            state.mode = 'JOINING';
+            state.buddyCode = testCode;
+
+            el.buddyCodeInput.value = testCode;
+            el.buddyCodeInput.disabled = true;
+            el.codeLockIndicator.textContent = '🔒 LOCKED';
+            el.rightStatusBadge.textContent = 'TEST LINK';
+            el.rightConnectionMsg.textContent = 'SELF-LINKING...';
+            el.rightSubMsg.textContent = 'Testing live P2P Link Cable';
+
+            const fullId = `${PEER_PREFIX}${testCode}`;
+            const hostPeer = new Peer(fullId, { debug: 0, config: ICE_CONFIG });
+            state.secondaryPeer = hostPeer;
+
+            hostPeer.on('connection', (incomingConn) => {
+                incomingConn.on('data', (data) => handleIncomingPacket(data));
+            });
+
+            hostPeer.on('open', () => {
+                const clientPeer = new Peer({ debug: 0, config: ICE_CONFIG });
+                state.peer = clientPeer;
+                clientPeer.on('open', () => {
+                    for (let lane = 0; lane < 4; lane++) {
+                        const conn = clientPeer.connect(fullId, {
+                            label: `lane-${lane}`,
+                            reliable: true,
+                            serialization: 'raw'
+                        });
+                        registerDataConnection(conn);
+                    }
+                });
+            });
+        }
+
+        // ==========================================
+        // 8. COPYPARTY-STYLE 4-LANE CHUNK STREAMING
+        // ==========================================
+        const CHUNK_SIZE = 128 * 1024;           // 128 KB binary frames
+        const MAX_BUFFERED = 2 * 1024 * 1024;    // 2 MB high-water mark per lane
+
+        async function sendSelectedFiles() {
+            if (state.mode !== 'CONNECTED') {
+                AudioEngine.cancel();
+                showToast('Connect with a buddy first before sending files!', '⚠️');
+                return;
+            }
+            if (!state.selectedFiles || state.selectedFiles.length === 0) {
+                AudioEngine.cancel();
+                showToast('Click "CHOOSE FILE" on the Left Game Boy first!', '📁');
+                el.fileInput.click();
+                return;
+            }
+            if (state.isTransferring) {
+                showToast('Transfer currently in progress...', '⏳');
+                return;
+            }
+
+            const openLanes = state.connections.filter(c => c.open);
+            if (openLanes.length === 0) {
+                showToast('Link connection lost.', '❌');
+                resetToIdle(true);
+                return;
+            }
+
+            state.isTransferring = true;
+            setCableTransferAnimation(true);
+            el.leftTransferBox.classList.remove('hidden');
+            el.leftBtnA.classList.remove('glow-hint');
+
+            try {
+                state._sent = await sendWithConsent(state.selectedFiles);
+                if (state._sent) AudioEngine.transferComplete();
+                el.selectedFileMeta.textContent = state._sent ? 'Sent! Pick another or press [A]' : 'Not sent. Pick another or press [A]';
+                showToast(state._sent ? `Sent ${state._sent} file(s) at turbo speed!` : 'Nothing was sent.', state._sent ? '✅' : '🚫');
+            } catch (err) {
+                showToast('Transfer interrupted.', '❌');
+            } finally {
+                state.isTransferring = false;
+                setCableTransferAnimation(false);
+            }
+        }
+
+        async function transmitSingleFile(file, lanes, transferId) {
+            const totalChunks = Math.ceil(file.size / CHUNK_SIZE) || 1;
+            const startTime = performance.now();
+            let bytesSent = 0;
+
+            // 1. Send JSON metadata header on Lane 0
+            lanes[0].send(JSON.stringify({
+                type: 'FILE_META',
+                transferId,
+                name: file.name,
+                size: file.size,
+                mime: file.type || 'application/octet-stream',
+                totalChunks
+            }));
+
+            // 2. Stripe 128 KB binary frames across all active DataChannels with backpressure control
+            const idBytes = new TextEncoder().encode(transferId);
+
+            for (let chunkIdx = 0; chunkIdx < totalChunks; chunkIdx++) {
+                const conn = lanes[chunkIdx % lanes.length];
+                const dc = conn.dataChannel;
+
+                // Backpressure pause if underlying WebRTC send buffer exceeds 2 MB
+                if (dc && dc.bufferedAmount > MAX_BUFFERED) {
+                    await new Promise((resolve) => {
+                        const onLow = () => {
+                            dc.removeEventListener('bufferedamountlow', onLow);
+                            resolve();
+                        };
+                        dc.addEventListener('bufferedamountlow', onLow);
+                        setTimeout(resolve, 60); // Safety fallback
+                    });
+                }
+
+                const start = chunkIdx * CHUNK_SIZE;
+                const end = Math.min(start + CHUNK_SIZE, file.size);
+                const sliceBuffer = await file.slice(start, end).arrayBuffer();
+
+                // Frame layout: [8 bytes transferId][4 bytes chunkIdx Uint32][raw payload bytes]
+                const frame = new Uint8Array(12 + sliceBuffer.byteLength);
+                frame.set(idBytes, 0);
+                new DataView(frame.buffer).setUint32(8, chunkIdx, true);
+                frame.set(new Uint8Array(sliceBuffer), 12);
+
+                conn.send(frame.buffer);
+
+                bytesSent += sliceBuffer.byteLength;
+                const elapsedSec = Math.max((performance.now() - startTime) / 1000, 0.001);
+                const bytesPerSec = bytesSent / elapsedSec;
+                const speedLabel = bytesPerSec >= 1024 * 1024
+                    ? `${(bytesPerSec / (1024 * 1024)).toFixed(1)} MB/s`
+                    : `${(bytesPerSec / 1024).toFixed(0)} KB/s`;
+
+                const pct = Math.min(100, Math.round((bytesSent / Math.max(file.size, 1)) * 100));
+                el.leftProgressPct.textContent = `${pct}%`;
+                el.leftSpeedText.textContent = speedLabel;
+                el.leftProgressBar.style.width = `${pct}%`;
+            }
+
+            // 3. Send completion verification packet on Lane 0
+            lanes[0].send(JSON.stringify({
+                type: 'FILE_DONE',
+                transferId
+            }));
+        }
+
+        // ==========================================
+        // 9. INCOMING CHUNK REASSEMBLY & AUTO-DOWNLOAD
+        // ==========================================
+        function handleIncomingPacket(data) {
+            if (typeof data === 'string') {
+                const msg = JSON.parse(data);
+                if (msg.type === 'FILE_META') {
+                    state.incomingTransfers[msg.transferId] = {
+                        meta: msg,
+                        chunks: new Array(msg.totalChunks),
+                        receivedBytes: 0,
+                        startTime: performance.now()
+                    };
+                    setCableTransferAnimation(true);
+                    el.rightTrainersGraphic.classList.add('hidden');
+                    el.rightReceiveBox.classList.remove('hidden');
+                    el.rightRecvFileName.textContent = msg.name;
+                    el.rightRecvPct.textContent = '0%';
+                    el.rightProgressBar.style.width = '0%';
+                } else if (msg.type === 'FILE_DONE') {
+                    finalizeAndDownloadFile(msg.transferId);
+                }
+                return;
+            }
+
+            // Binary chunk frame (ArrayBuffer or Uint8Array)
+            const buffer = data instanceof ArrayBuffer ? data : data.buffer;
+            const view = new Uint8Array(buffer);
+            const transferId = new TextDecoder().decode(view.slice(0, 8));
+            const chunkIdx = new DataView(buffer).getUint32(8, true);
+            const payload = view.slice(12);
+
+            const job = state.incomingTransfers[transferId];
+            if (!job) return;
+
+            job.chunks[chunkIdx] = payload;
+            job.receivedBytes += payload.byteLength;
+
+            const pct = Math.min(100, Math.round((job.receivedBytes / Math.max(job.meta.size, 1)) * 100));
+            el.rightRecvPct.textContent = `${pct}%`;
+            el.rightProgressBar.style.width = `${pct}%`;
+        }
+
+        function finalizeAndDownloadFile(transferId) {
+            const job = state.incomingTransfers[transferId];
+            if (!job) return;
+
+            setCableTransferAnimation(false);
+
+            // Verify byte length integrity before triggering automatic download
+            if (job.receivedBytes !== job.meta.size) {
+                showToast(`Size mismatch on ${job.meta.name} (${job.receivedBytes}/${job.meta.size} B)`, '⚠️');
+            }
+
+            const blob = new Blob(job.chunks, { type: job.meta.mime });
+            const downloadUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = job.meta.name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            setTimeout(() => URL.revokeObjectURL(downloadUrl), 15000);
+            delete state.incomingTransfers[transferId];
+
+            AudioEngine.transferComplete();
+            el.rightRecvPct.textContent = 'TRADE COMPLETE!';
+            showToast(`TRADE COMPLETE! "${job.meta.name}" saved to Downloads!`, '💾');
+        }
+
+        // ==========================================
+        // 10. BUTTON & KEYBOARD EVENT LISTENERS
+        // ==========================================
+        function copyBuddyCodeToClipboard() {
+            if (!state.buddyCode) return;
+            AudioEngine.blip(680);
+            const temp = document.createElement('textarea');
+            temp.value = state.buddyCode;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+            showToast(`Copied Buddy Code (${state.buddyCode}) to clipboard!`, '📋');
+        }
+
+        // Left Game Boy: Host Mode triggers (START button & clickable LCD button)
+        el.lcdHostBtn.addEventListener('click', () => startHostingMode());
+        el.leftStartBtn.addEventListener('click', () => {
+            animateButtonPress(el.leftStartBtn);
+            if (state.mode === 'IDLE') {
+                startHostingMode();
+            } else if (state.mode === 'CONNECTED') {
+                el.fileInput.click();
+            }
+        });
+
+        el.copyCodeBtn.addEventListener('click', copyBuddyCodeToClipboard);
+        el.leftSelectBtn.addEventListener('click', () => {
+            animateButtonPress(el.leftSelectBtn);
+            if (state.mode === 'HOSTING') copyBuddyCodeToClipboard();
+            else AudioEngine.blip(520);
+        });
+
+        // Left Game Boy: File Explorer Selection
+        el.selectFileBtn.addEventListener('click', () => {
+            AudioEngine.blip(580);
+            el.fileInput.click();
+        });
+
+        el.fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files || []);
+            if (files.length === 0) return;
+            state.selectedFiles = files;
+
+            if (files.length === 1) {
+                el.selectedFileName.textContent = files[0].name;
+                el.selectedFileMeta.textContent = `${formatBytes(files[0].size)} • Press [A] to Send!`;
+            } else {
+                const totalBytes = files.reduce((sum, f) => sum + f.size, 0);
+                el.selectedFileName.textContent = `${files.length} files selected`;
+                el.selectedFileMeta.textContent = `${formatBytes(totalBytes)} total • Press [A]!`;
+            }
+            el.leftTransferBox.classList.add('hidden');
+            el.leftBtnA.classList.add('glow-hint');
+            AudioEngine.blip(740);
+        });
+
+        // Left Game Boy [A] -> Send Selected File
+        el.leftBtnA.addEventListener('click', () => {
+            animateButtonPress(el.leftBtnA);
+            AudioEngine.blip(660);
+            sendSelectedFiles();
+        });
+
+        // Left Game Boy [B] -> Cancel Hosting / Disconnect Link
+        el.leftBtnB.addEventListener('click', () => {
+            animateButtonPress(el.leftBtnB);
+            if (state.mode !== 'IDLE') {
+                resetToIdle(true);
+                showToast('Session ended. Returned to Idle.', '🔌');
+            } else {
+                AudioEngine.cancel();
+            }
+        });
+
+        // Right Game Boy [A] -> Join Buddy Code
+        el.rightBtnA.addEventListener('click', () => {
+            animateButtonPress(el.rightBtnA);
+            AudioEngine.blip(660);
+            joinBuddyCode();
+        });
+
+        el.rightStartBtn.addEventListener('click', () => {
+            animateButtonPress(el.rightStartBtn);
+            joinBuddyCode();
+        });
+
+        el.rightSelectBtn.addEventListener('click', () => {
+            animateButtonPress(el.rightSelectBtn);
+            AudioEngine.blip(520);
+            if (!el.buddyCodeInput.disabled) el.buddyCodeInput.focus();
+        });
+
+        // Right Game Boy [B] -> Cancel Joining / Disconnect & Unlock Code Input
+        el.rightBtnB.addEventListener('click', () => {
+            animateButtonPress(el.rightBtnB);
+            if (state.mode === 'JOINING') {
+                cancelJoinOnly();
+                showToast('Cancelled linking. Code input unlocked!', '🔓');
+            } else if (state.mode !== 'IDLE') {
+                resetToIdle(true);
+                showToast('Disconnected! Buddy Code input unlocked.', '🔓');
+            } else {
+                el.buddyCodeInput.value = '';
+                el.buddyCodeInput.focus();
+                AudioEngine.cancel();
+            }
+        });
+
+        // Auto-uppercase Buddy Code input & allow Enter key to press [A]
+        el.buddyCodeInput.addEventListener('input', () => {
+            el.buddyCodeInput.value = el.buddyCodeInput.value.toUpperCase();
+        });
+
+        el.buddyCodeInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                animateButtonPress(el.rightBtnA);
+                joinBuddyCode();
+            }
+        });
+
+        // Top Bar Controls
+        el.muteToggleBtn.addEventListener('click', () => {
+            const isMuted = AudioEngine.toggleMute();
+            el.muteToggleBtn.textContent = isMuted ? '🔇 SFX: OFF' : '🔊 SFX: ON';
+        });
+
+        el.demoLoopbackBtn.addEventListener('click', () => {
+            runSelfLinkTest();
+        });
+    </script>
+<script>
+/* ===== v3: chat, transfer consent, music, help ===== */
+const $ = id => document.getElementById(id);
+const sh = (id, on) => $(id).classList.toggle('hidden', !on);
+const OFFER_MS = 90000, MAXIMG = 190000;
+const okId = s => typeof s === 'string' && /^[a-z0-9]{8}$/.test(s);
+const clean = (s, n) => String(s == null ? '' : s).replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, n);
+const me = () => state.myName || 'You', bud = () => state.buddyName || 'Buddy';
+Object.assign(state, { pendingOffers: {}, offerQueue: [], activeOffer: null, myName: '', buddyName: '' });
+
+function send(o) {
+    const l = state.connections.find(c => c.open);
+    if (!l) return false;
+    try { l.send(JSON.stringify(o)); return true; } catch (e) { return false; }
+}
+
+// ---------- CHAT ----------
+function names() { $('chatMe').textContent = me().toUpperCase(); $('chatBud').textContent = bud().toUpperCase(); }
+function line(kind, text, img) {
+    const log = $('chatLog'), d = document.createElement('div');
+    if (kind === 'sys') { d.className = 'cl sys'; d.textContent = '* ' + text + ' *'; }
+    else {
+        d.className = 'cl';
+        const n = document.createElement('span');
+        n.className = 'cn ' + kind; n.textContent = (kind === 'me' ? me() : bud()) + ': ';
+        d.appendChild(n);
+        if (img) {
+            const i = new Image(); i.src = img; i.className = 'cimg';
+            i.onclick = () => { $('lbImg').src = img; sh('lightbox', true); };
+            d.appendChild(i);
+        } else d.appendChild(document.createTextNode(text));
+    }
+    log.appendChild(d);
+    while (log.children.length > 200) log.removeChild(log.firstChild);
+    log.scrollTop = log.scrollHeight;
+}
+function sendText() {
+    const t = clean($('chatInput').value, 300);
+    if (!t) return;
+    if (!send({ type: 'CHAT_MSG', text: t })) { showToast('Not connected.', '⚠️'); return; }
+    line('me', t); $('chatInput').value = ''; AudioEngine.blip(700);
+}
+function sendImage(f) {
+    if (!f || !/^image\//.test(f.type)) return;
+    const u = URL.createObjectURL(f), im = new Image();
+    im.onload = () => {
+        URL.revokeObjectURL(u);
+        if (!im.naturalWidth) return showToast('Could not read that image.', '⚠️');
+        let d = 420, q = .75, o = '';
+        for (let a = 0; a < 6; a++) {
+            const s = Math.min(1, d / Math.max(im.naturalWidth, im.naturalHeight)), c = document.createElement('canvas');
+            c.width = Math.max(1, Math.round(im.naturalWidth * s)); c.height = Math.max(1, Math.round(im.naturalHeight * s));
+            const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0, c.width, c.height);
+            o = c.toDataURL('image/jpeg', q);
+            if (o.length <= MAXIMG) break;
+            d *= .8; q = Math.max(.45, q - .08);
+        }
+        if (o.length > MAXIMG) return showToast('Image is too big to send in chat.', '⚠️');
+        if (send({ type: 'CHAT_IMG', data: o })) { line('me', '', o); AudioEngine.blip(700); }
+        else showToast('Not connected.', '⚠️');
+    };
+    im.onerror = () => showToast('Could not read that image.', '⚠️');
+    im.src = u;
+}
+function openName() { $('nameInput').value = state.myName; sh('nameModal', true); $('nameInput').focus(); }
+function saveName(v) {
+    state.myName = clean(v, 14);
+    send({ type: 'CHAT_NAME', name: state.myName });
+    names(); sh('nameModal', false);
+    line('sys', state.myName ? 'You are now ' + state.myName : 'Chat name reset');
+}
+'😀 😂 🤣 😊 😎 😍 😘 🤔 😮 😭 😡 🥳 😴 🤯 👍 👎 👋 🙏 👏 💪 🎮 🕹️ ⚡ 🔥 ⭐ 💎 🎁 📦 💾 📁 🎉 🎵 ❤️ 💀 👾 🤖 🐱 🐶 🐉 🍕'.split(' ').forEach(e => {
+    const b = document.createElement('button'); b.textContent = e;
+    b.onclick = () => {
+        const i = $('chatInput'), s = i.selectionStart == null ? i.value.length : i.selectionStart, t = i.selectionEnd == null ? s : i.selectionEnd;
+        i.value = (i.value.slice(0, s) + e + i.value.slice(t)).slice(0, 300);
+        i.focus(); i.setSelectionRange(s + e.length, s + e.length);
+    };
+    $('emojiPop').appendChild(b);
+});
+$('emojiBtn').onclick = e => { e.stopPropagation(); AudioEngine.blip(600); $('emojiPop').classList.toggle('hidden'); };
+document.addEventListener('click', e => { if (!$('emojiPop').contains(e.target)) sh('emojiPop', false); });
+$('chatSend').onclick = sendText;
+$('chatInput').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); sendText(); } };
+$('chatImgBtn').onclick = () => { AudioEngine.blip(580); $('chatImgIn').click(); };
+$('chatImgIn').onchange = e => { sendImage(e.target.files[0]); e.target.value = ''; };
+$('chatInput').onpaste = e => {
+    const f = Array.from((e.clipboardData && e.clipboardData.files) || []).find(f => /^image\//.test(f.type));
+    if (f) { e.preventDefault(); sendImage(f); }
+};
+$('nameBtn').onclick = openName;
+$('nameSave').onclick = () => saveName($('nameInput').value);
+$('nameReset').onclick = () => saveName('');
+$('nameCancel').onclick = () => sh('nameModal', false);
+$('nameInput').onkeydown = e => { if (e.key === 'Enter') saveName(e.target.value); };
+el.leftSelectBtn.addEventListener('click', () => { if (state.mode === 'CONNECTED') openName(); });
+$('helpBtn').onclick = () => { AudioEngine.blip(620); sh('helpModal', true); };
+$('helpClose').onclick = () => sh('helpModal', false);
+$('helpModal').onclick = e => { if (e.target === $('helpModal')) sh('helpModal', false); };
+$('lightbox').onclick = () => sh('lightbox', false);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') ['helpModal', 'nameModal', 'lightbox'].forEach(i => sh(i, false)); });
+
+// ---------- RECEIVING: ask first ----------
+function onOffer(m) {
+    if (!okId(m.transferId) || state.incomingTransfers[m.transferId]) return;
+    const size = Number(m.size);
+    if (!Number.isFinite(size) || size < 0 || size > 4 * 2 ** 30) { send({ type: 'FILE_DECLINE', transferId: m.transferId }); return; }
+    const o = {
+        transferId: m.transferId, size,
+        name: clean(m.name, 200).replace(/[\\\/:*?"<>|]/g, '_') || 'file',
+        mime: /^[\w.+-]+\/[\w.+-]+$/.test(m.mime || '') ? m.mime : 'application/octet-stream',
+        mod: Number(m.mod) || 0, i: Number(m.i) || 1, n: Number(m.n) || 1, total: Number(m.total) || size,
+        totalChunks: Math.max(1, Math.ceil(size / CHUNK_SIZE))
+    };
+    if ($('autoAccept').checked) accept(o, true);
+    else { state.offerQueue.push(o); nextOffer(); }
+}
+function accept(o, auto) {
+    state.incomingTransfers[o.transferId] = { meta: o, chunks: new Array(o.totalChunks), receivedBytes: 0, got: 0, done: false, startTime: performance.now() };
+    send({ type: 'FILE_ACCEPT', transferId: o.transferId });
+    line('sys', (auto ? 'Auto-accepted ' : 'Accepted ') + o.name);
+}
+function nextOffer() {
+    if (state.activeOffer || !state.offerQueue.length) return;
+    const o = state.activeOffer = state.offerQueue.shift();
+    const ext = o.name.includes('.') ? o.name.split('.').pop().slice(0, 8).toUpperCase() : 'NONE';
+    $('offFrom').textContent = bud();
+    $('offName').textContent = o.name;
+    $('offType').textContent = o.mime + ' (.' + ext + ')';
+    $('offSize').textContent = formatBytes(o.size);
+    $('offMod').textContent = o.mod ? new Date(o.mod).toLocaleString() : 'unknown';
+    $('offItem').textContent = o.n > 1 ? o.i + ' of ' + o.n + ' (' + formatBytes(o.total) + ' total)' : 'single file';
+    $('offWarn').classList.toggle('hidden', !/\.(exe|msi|bat|cmd|com|scr|ps1|vbs|js|jar|apk|dmg|pkg|sh|lnk)$/i.test(o.name));
+    $('offQ').textContent = state.offerQueue.length ? '+' + state.offerQueue.length + ' WAITING' : '';
+    sh('offerModal', true); AudioEngine.prompt();
+}
+function answer(yes) {
+    const o = state.activeOffer;
+    if (!o) return;
+    state.activeOffer = null; sh('offerModal', false);
+    if (yes) accept(o, false);
+    else { send({ type: 'FILE_DECLINE', transferId: o.transferId }); line('sys', 'Declined ' + o.name); }
+    setTimeout(nextOffer, 150);
+}
+function onCancel(id) {
+    if (state.activeOffer && state.activeOffer.transferId === id) {
+        state.activeOffer = null; sh('offerModal', false);
+        showToast(bud() + ' cancelled the offer.', '🚫'); nextOffer();
+    } else state.offerQueue = state.offerQueue.filter(o => o.transferId !== id);
+}
+$('offYes').onclick = () => answer(true);
+$('offNo').onclick = () => answer(false);
+$('autoAccept').onchange = e => {
+    if (!e.target.checked) return;
+    if (state.activeOffer) answer(true);
+    while (state.offerQueue.length) accept(state.offerQueue.shift(), true);
+};
+function showRecv(j) {
+    if (j.ui) return; j.ui = true;
+    setCableTransferAnimation(true);
+    el.rightTrainersGraphic.classList.add('hidden');
+    el.rightReceiveBox.classList.remove('hidden');
+    el.rightRecvFileName.textContent = j.meta.name;
+}
+function tryFinish(id) {
+    const j = state.incomingTransfers[id];
+    if (j && j.done && j.got >= j.meta.totalChunks) { line('sys', 'Received ' + j.meta.name); finalizeAndDownloadFile(id); }
+}
+
+handleIncomingPacket = function (data) {
+    if (typeof data === 'string') {
+        let m; try { m = JSON.parse(data); } catch (e) { return; }
+        if (!m || typeof m.type !== 'string') return;
+        switch (m.type) {
+            case 'CHAT_MSG': { const t = clean(m.text, 300); if (t) { line('buddy', t); AudioEngine.msgIn(); } break; }
+            case 'CHAT_IMG':
+                if (typeof m.data === 'string' && m.data.length <= MAXIMG + 100 && /^data:image\/(jpeg|png|gif|webp);base64,[A-Za-z0-9+\/=]+$/.test(m.data)) { line('buddy', '', m.data); AudioEngine.msgIn(); }
+                break;
+            case 'CHAT_NAME': { const o = bud(); state.buddyName = clean(m.name, 14); names(); if (bud() !== o) line('sys', o + ' is now ' + bud()); break; }
+            case 'FILE_OFFER': onOffer(m); break;
+            case 'FILE_ACCEPT': settle(m.transferId, 'accepted'); break;
+            case 'FILE_DECLINE': settle(m.transferId, 'declined'); break;
+            case 'FILE_CANCEL': onCancel(m.transferId); break;
+            case 'FILE_META': { const j = state.incomingTransfers[m.transferId]; if (j) showRecv(j); break; }
+            case 'FILE_DONE': { const j = state.incomingTransfers[m.transferId]; if (j) { j.done = true; tryFinish(m.transferId); } break; }
+        }
+        return;
+    }
+    const buf = data instanceof ArrayBuffer ? data : (ArrayBuffer.isView(data) ? data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) : null);
+    if (!buf || buf.byteLength < 12) return;
+    const v = new Uint8Array(buf), id = new TextDecoder().decode(v.slice(0, 8)), j = state.incomingTransfers[id];
+    if (!j) return;                      // never accepted -> ignored
+    const idx = new DataView(buf).getUint32(8, true), p = v.slice(12);
+    if (idx >= j.meta.totalChunks || j.chunks[idx] || j.receivedBytes + p.byteLength > j.meta.size) return;
+    j.chunks[idx] = p; j.got++; j.receivedBytes += p.byteLength;
+    showRecv(j);
+    const pct = Math.min(100, Math.round(j.receivedBytes / Math.max(j.meta.size, 1) * 100));
+    el.rightRecvPct.textContent = pct + '%'; el.rightProgressBar.style.width = pct + '%';
+    tryFinish(id);                       // completes only when "done" AND every chunk has arrived
+};
+
+// ---------- SENDING: offer, wait for answer ----------
+function settle(id, st) {
+    const p = state.pendingOffers[id];
+    if (!p) return;
+    delete state.pendingOffers[id]; clearTimeout(p.t); p.r(st);
+}
+function offer(f, i, n, total) {
+    return new Promise(r => {
+        const id = Math.random().toString(36).substring(2, 10).padEnd(8, '0');
+        if (!send({ type: 'FILE_OFFER', transferId: id, name: f.name, size: f.size, mime: f.type || 'application/octet-stream', mod: f.lastModified || 0, i: i + 1, n, total })) { r({ st: 'failed', id }); return; }
+        state.pendingOffers[id] = { r: st => r({ st, id }), t: setTimeout(() => { send({ type: 'FILE_CANCEL', transferId: id }); settle(id, 'timeout'); }, OFFER_MS) };
+    });
+}
+async function sendWithConsent(files) {
+    let sent = 0; const total = files.reduce((s, f) => s + f.size, 0);
+    for (let i = 0; i < files.length; i++) {
+        const f = files[i];
+        setCableTransferAnimation(false); el.leftTransferBox.classList.add('hidden');
+        el.selectedFileMeta.textContent = 'Waiting for ' + bud() + ' to accept...';
+        const { st, id } = await offer(f, i, files.length, total);
+        if (state.mode !== 'CONNECTED') break;
+        if (st !== 'accepted') {
+            const msg = st === 'declined' ? bud() + ' declined ' + f.name : st === 'timeout' ? 'No answer for ' + f.name : 'Could not offer ' + f.name;
+            showToast(msg, '🚫'); line('sys', msg); continue;
+        }
+        const lanes = state.connections.filter(c => c.open);
+        if (!lanes.length) break;
+        setCableTransferAnimation(true); el.leftTransferBox.classList.remove('hidden');
+        el.leftProgressPct.textContent = '0%'; el.leftProgressBar.style.width = '0%';
+        await transmitSingleFile(f, lanes, id);
+        sent++; line('sys', 'Sent ' + f.name);
+    }
+    return sent;
+}
+
+// ---------- connect / disconnect hooks ----------
+const _reset = resetToIdle;
+resetToIdle = function (p) {
+    Object.keys(state.pendingOffers).forEach(k => settle(k, 'failed'));
+    state.offerQueue = []; state.activeOffer = null; state.buddyName = '';
+    ['offerModal', 'chatSection', 'emojiPop', 'nameModal'].forEach(i => sh(i, false));
+    $('chatLog').innerHTML = '';
+    _reset(p);
+};
+const _enter = enterConnectedState;
+enterConnectedState = function () {
+    _enter();
+    sh('chatSection', true); names();
+    line('sys', 'Link established. Say hi!');
+    send({ type: 'CHAT_NAME', name: state.myName });
+    setTimeout(() => { if (state.mode === 'CONNECTED') send({ type: 'CHAT_NAME', name: state.myName }); }, 700);
+};
+
+// ---------- 8-BIT TRADING ROOM MUSIC ----------
+const NB = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+const mid = n => { if (typeof n === 'number') return n; const m = /^([A-G])([#b]?)(\d)$/.exec(n); return m ? 12 * (+m[3] + 1) + NB[m[1]] + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0) : null; };
+const TR = [
+    { n: 'TRADE CENTER', bpm: 116, d: .25, ad: .125,
+      ch: [['C2', 'C4 E4 G4'], ['G2', 'G3 B3 D4'], ['A2', 'A3 C4 E4'], ['F2', 'F3 A3 C4'], ['C2', 'C4 E4 G4'], ['G2', 'G3 B3 D4'], ['F2', 'F3 A3 C4'], ['G2', 'G3 B3 D4']],
+      ld: ['E5 - - G5 - - E5 - C5 - - E5 - - . .', 'D5 - - G5 - - D5 - B4 - - D5 - - . .', 'C5 - - E5 - - A5 - G5 - - E5 - - C5 -', 'A4 - - C5 - - F5 - E5 - - D5 - - C5 .',
+           'G5 - - E5 - - C5 - E5 - - G5 - - C6 -', 'B5 - - G5 - - D5 - G5 - - B5 - - A5 -', 'A5 - - F5 - - C5 - F5 - - A5 - - G5 -', 'F5 - - D5 - - B4 - D5 - - G5 - - . .'],
+      bs: 'R - - . R - O . R - - . F - O .', ar: [0, 1, 2, 1, 0, 1, 2, 1, 0, 1, 2, 1, 0, 1, 2, 1],
+      k: 'x.......x.x.....', s: '....x.......x...', h: 'x.x.x.x.x.x.x.x.' },
+    { n: 'MIDNIGHT LINK', bpm: 92, d: .5, ad: .125,
+      ch: [['A2', 'A3 C4 E4'], ['F2', 'F3 A3 C4'], ['C2', 'C4 E4 G4'], ['G2', 'G3 B3 D4'], ['A2', 'A3 C4 E4'], ['F2', 'F3 A3 C4'], ['G2', 'G3 B3 D4'], ['E2', 'E3 G#3 B3']],
+      ld: ['E5 - - - C5 - - A4 - - - C5 - - - .', 'A4 - - - C5 - - F5 - - - E5 - - D5 -', 'E5 - - - G5 - - E5 - - - D5 - - C5 -', 'D5 - - - B4 - - G4 - - - B4 - - D5 -',
+           'C5 - - - E5 - - A5 - - - G5 - - E5 -', 'F5 - - - A5 - - F5 - - - E5 - - C5 -', 'D5 - - - G5 - - B5 - - - A5 - - G5 -', 'G#5 - - - E5 - - B4 - - - E5 - - . .'],
+      bs: 'R - - - - - . . O - - - F - - .', ar: [0, -1, 1, -1, 2, -1, 1, -1, 0, -1, 1, -1, 2, -1, 1, -1],
+      k: 'x.......x.......', s: '........x.......', h: '..x...x...x...x.' },
+    { n: 'BUDDY BOUNCE', bpm: 132, d: .25, ad: .125,
+      ch: [['G2', 'G3 B3 D4'], ['D2', 'D4 F#4 A4'], ['E2', 'E3 G3 B3'], ['C2', 'C4 E4 G4'], ['G2', 'G3 B3 D4'], ['D2', 'D4 F#4 A4'], ['C2', 'C4 E4 G4'], ['D2', 'D4 F#4 A4']],
+      ld: ['B4 . D5 . G5 - D5 . B4 . D5 . G5 - - .', 'A4 . D5 . F#5 - D5 . A4 . D5 . F#5 - - .', 'G4 . B4 . E5 - B4 . G4 . B4 . E5 - - .', 'E5 . G5 . C6 - G5 . E5 . G5 . D5 - - .',
+           'D5 - B4 . G5 - - . F#5 - D5 . E5 - - .', 'F#5 - A5 . D6 - - . A5 - F#5 . E5 - - .', 'E5 - G5 . C6 - - . B5 - G5 . E5 - - .', 'A5 - F#5 . D5 - - . E5 . F#5 . A5 - - .'],
+      bs: 'R . O . R . O . R . O . F . O .', ar: [-1, 0, -1, 1, -1, 2, -1, 1, -1, 0, -1, 1, -1, 2, -1, 1],
+      k: 'x...x...x...x...', s: '....x.......x...', h: 'x.x.x.x.x.x.x.xx' }
+];
+function build(t) {
+    const ev = Array.from({ length: 256 }, () => []), ld = [], bs = [];
+    for (let b = 0; b < 16; b++) {
+        const x = t.ld[b % 8].split(/\s+/).slice(0, 16); while (x.length < 16) x.push('.'); ld.push(...x);
+        const r = mid(t.ch[b % 8][0]); t.bs.split(' ').forEach(k => bs.push(k === 'R' ? r : k === 'O' ? r + 12 : k === 'F' ? r + 7 : k));
+        const tones = t.ch[b % 8][1].split(' ');
+        for (let s = 0; s < 16; s++) {
+            const e = ev[b * 16 + s];
+            if (t.ar[s] >= 0) e.push({ c: 'a', m: mid(tones[t.ar[s]]), l: 1 });
+            if (t.k[s] === 'x') e.push({ c: 'K', l: 1 });
+            if (t.s[s] === 'x') e.push({ c: 'S', l: 1 });
+            if (t.h[s] === 'x') e.push({ c: 'H', l: 1 });
+        }
+    }
+    [[ld, 'l'], [bs, 'b']].forEach(([tok, ch]) => {
+        for (let i = 0; i < tok.length; i++) {
+            const m = mid(tok[i]); if (m == null) continue;
+            let l = 1; while (tok[i + l] === '-') l++;
+            ev[i].push({ c: ch, m, l });
+        }
+    });
+    ev.slice(128).forEach(a => a.filter(e => e.c === 'l').forEach(e => a.push({ c: 'm', m: e.m + 12, l: e.l })));  // 2nd half: octave-doubled lead
+    return Object.assign({}, t, { ev });
+}
+const TK = TR.map(build);
+const Mu = { on: false, i: 0, st: 0, nt: 0, tm: null, c: null, m: null, sess: null };
+Mu.fade = function () {
+    clearInterval(this.tm);
+    if (this.sess) { const s = this.sess; s.gain.setTargetAtTime(0, this.c.currentTime, .03); setTimeout(() => s.disconnect(), 400); this.sess = null; }
+};
+Mu.go = function () {
+    const c = this.c = AudioEngine.getCtx();
+    if (!this.m) {
+        this.m = c.createGain(); this.m.gain.value = .5;
+        const k = c.createDynamicsCompressor(); this.m.connect(k); k.connect(c.destination);
+        const b = c.createBuffer(1, c.sampleRate, c.sampleRate), d = b.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+        this.nb = b; this.w = {};
+        [.25, .125, .5].forEach(x => {
+            const r = new Float32Array(41), im = new Float32Array(41);
+            for (let h = 1; h <= 40; h++) { r[h] = Math.sin(2 * Math.PI * h * x) / (Math.PI * h); im[h] = (1 - Math.cos(2 * Math.PI * h * x)) / (Math.PI * h); }
+            this.w[x] = c.createPeriodicWave(r, im);
+        });
+    }
+    this.fade();
+    this.sess = c.createGain(); this.sess.connect(this.m);
+    this.st = 0; this.nt = c.currentTime + .08; this.on = true;
+    this.tm = setInterval(() => this.tick(), 40);
+};
+Mu.stop = function () { this.fade(); this.on = false; };
+Mu.tick = function () {
+    const t = TK[this.i], sd = 60 / t.bpm / 4, c = this.c;
+    if (this.nt < c.currentTime - .3) this.nt = c.currentTime + .05;
+    while (this.nt < c.currentTime + (document.hidden ? 1.5 : .3)) {
+        (t.ev[this.st] || []).forEach(e => this.v(e, t, this.nt, sd));
+        this.st = (this.st + 1) % 256; this.nt += sd;
+    }
+};
+Mu.v = function (e, t, at, sd) {
+    const c = this.c, g = c.createGain(); g.connect(this.sess);
+    if (e.c === 'K') {
+        const o = c.createOscillator(); o.frequency.setValueAtTime(150, at); o.frequency.exponentialRampToValueAtTime(42, at + .1);
+        g.gain.setValueAtTime(.5, at); g.gain.exponentialRampToValueAtTime(.001, at + .16); o.connect(g); o.start(at); o.stop(at + .18); return;
+    }
+    if (e.c === 'S' || e.c === 'H') {
+        const s = c.createBufferSource(), f = c.createBiquadFilter(), sn = e.c === 'S', d = sn ? .12 : .03;
+        s.buffer = this.nb; f.type = 'highpass'; f.frequency.value = sn ? 1500 : 7000;
+        g.gain.setValueAtTime(sn ? .16 : .05, at); g.gain.exponentialRampToValueAtTime(.001, at + d);
+        s.connect(f); f.connect(g); s.start(at, Math.random() * .5, d + .02); return;
+    }
+    const o = c.createOscillator(), dur = e.l * sd * .9, gv = { l: .085, m: .03, a: .04, b: .22 }[e.c];
+    if (e.c === 'b') o.type = 'triangle'; else o.setPeriodicWave(this.w[e.c === 'a' ? t.ad : e.c === 'm' ? .125 : t.d]);
+    o.frequency.value = 440 * Math.pow(2, (e.m - 69) / 12);
+    g.gain.setValueAtTime(.0001, at); g.gain.linearRampToValueAtTime(gv, at + .006);
+    g.gain.linearRampToValueAtTime(gv * .7, at + Math.min(.12, dur * .5));
+    g.gain.setValueAtTime(gv * .7, at + Math.max(dur - .03, .08)); g.gain.linearRampToValueAtTime(.0001, at + dur + .02);
+    o.connect(g); o.start(at); o.stop(at + dur + .03);
+};
+function musicUI() {
+    $('musicBtn').textContent = Mu.on ? '🎵 MUSIC: ON' : '🎵 MUSIC: OFF';
+    $('musicName').textContent = (Mu.i + 1) + '/3 ' + TR[Mu.i].n;
+}
+$('musicBtn').onclick = () => { if (Mu.on) Mu.stop(); else Mu.go(); musicUI(); };
+[['musicPrev', 2], ['musicNext', 1]].forEach(([id, d]) => $(id).onclick = () => { Mu.i = (Mu.i + d) % 3; if (Mu.on) Mu.go(); musicUI(); });
+</script>
+<script>
+/* ===== v4: 16-bit backgrounds + shell colors ===== */
+(function () {
+    const cv = $('bgCanvas'), g = cv.getContext('2d'), P = 4;
+    let W, H, seed = 1, tmr = null, bi = 0;
+    const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+    const R = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h))); };
+    const mix = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
+    const rgb = a => 'rgb(' + a.join(',') + ')';
+    const sky = (y0, y1, a, b, n) => { for (let y = Math.floor(y0); y < y1; y++) R(0, y, W, 1, rgb(mix(a, b, Math.floor((y - y0) / (y1 - y0) * n) / (n - 1)))); };
+    const blob = (cx, cy, rw, rh, c) => { for (let dy = -rh; dy <= rh; dy++) { const w = Math.round(rw * Math.sqrt(Math.max(0, 1 - dy * dy / (rh * rh + .01)))); R(cx - w, cy + dy, w * 2, 1, c); } };
+
+    function cyc(t) { for (let y = 0; y < H; y += 2) R(0, y, W, 2, 'hsl(' + ((t / 25 + y * 2.2) % 360) + ',65%,72%)'); }
+    function bliss() {
+        sky(0, H * .75, [30, 100, 215], [170, 215, 250], 14);
+        for (let i = 0; i < 7; i++) { const cx = rnd() * W, cy = H * (.1 + rnd() * .4); blob(cx, cy, 14 + rnd() * 14, 3 + rnd() * 3, '#fff'); blob(cx + 8, cy - 3, 8 + rnd() * 8, 3, '#fff'); blob(cx, cy + 2, 14, 2, '#dce9fa'); }
+        for (let x = 0; x < W; x++) {
+            const y = H * .72 + Math.sin(x / W * 3.4 + .5) * H * .07 + Math.sin(x / W * 9) * H * .012;
+            R(x, y, 1, 3, '#8ad03a'); R(x, y + 3, 1, (H - y) * .5, '#5aa820'); R(x, y + 3 + (H - y) * .5, 1, H, '#3c8a14');
+        }
+    }
+    function beach() {
+        const hz = Math.floor(H * .42);
+        sky(0, hz, [110, 200, 240], [210, 245, 255], 8); blob(W * .2, H * .15, 5, 5, '#fff6b0');
+        for (let y = hz; y < H * .66; y++) R(0, y, W, 1, (y - hz) % 6 < 3 ? '#2f80e0' : '#3b94f0');
+        for (let i = 0; i < 40; i++) R(rnd() * W, hz + rnd() * H * .24, 4 + rnd() * 4, 1, '#bfe4ff');
+        R(0, H * .62, W, 2, '#fff'); R(0, H * .64, W, H, '#f2d890');
+        for (let i = 0; i < W * H / 60; i++) R(rnd() * W, H * .66 + rnd() * H * .34, 1, 1, '#dcc070');
+        const bx = W * .82; let tx = bx, ty = H;
+        for (let i = 0; i < 24; i++) { tx = bx + Math.sin(i / 6) * 3 - i * .2; ty = H - i * H * .019 - 4; R(tx, ty, 3, 3, i % 3 ? '#8a5a2a' : '#6a4018'); }
+        [-2.9, -2.3, -1.57, -.8, -.25].forEach((a, k) => { for (let s = 0; s < 16; s++) R(tx + Math.cos(a) * s * 1.4, ty + Math.sin(a) * s * .6 + s * s * .05, 2, 2, k % 2 ? '#2c9a3a' : '#1f7a2a'); });
+    }
+    function center() {
+        const wh = Math.floor(H * .5);
+        R(0, 0, W, wh, '#f9d3dc'); for (let x = 0; x < W; x += 12) R(x, 0, 2, wh, '#f3bccb'); R(0, wh - 3, W, 3, '#d9708a');
+        for (let y = wh; y < H; y += 8) for (let x = 0; x < W; x += 8) R(x, y, 8, 8, ((x + y) / 8) % 2 ? '#f6e6d6' : '#e8cdb8');
+        R(W * .2, H * .36, W * .6, H * .14, '#e8e8f0'); R(W * .2, H * .36, W * .6, 4, '#d8353a'); R(W * .2, H * .47, W * .6, H * .03, '#d8353a');
+        const cx = W / 2, cy = H * .2; blob(cx, cy, 10, 10, '#d8353a');
+        for (let dy = 0; dy <= 10; dy++) { const w = Math.round(10 * Math.sqrt(1 - dy * dy / 100)); R(cx - w, cy + dy, w * 2, 1, '#fff'); }
+        R(cx - 10, cy - 1, 20, 2, '#222'); blob(cx, cy, 3, 3, '#fff');
+        [.07, .93].forEach(f => { R(W * f - 3, H * .52, 6, 5, '#b86030'); blob(W * f, H * .5, 5, 7, '#2d9a3a'); });
+    }
+    function town() {
+        R(0, 0, W, H, '#78c850');
+        for (let y = 0; y < H; y += 2) for (let x = (y / 2 % 2) * 2; x < W; x += 4) R(x, y, 1, 1, '#5fb03c');
+        for (let y = Math.floor(H * .35); y < H; y++) { const w = 6 + (y - H * .35) * .12; R(W / 2 - w, y, w * 2, 1, '#e6d49a'); }
+        [[.12, .12, '#d03030'], [.64, .1, '#3060d0'], [.78, .5, '#d03030'], [.06, .58, '#3060d0']].forEach(([fx, fy, rc]) => {
+            const x = W * fx, y = H * fy;
+            R(x, y, 28, 16, '#f8f0d8'); R(x - 2, y - 8, 32, 9, rc); R(x + 11, y + 7, 6, 9, '#8a5a2a'); R(x + 3, y + 5, 5, 5, '#8ac8f0'); R(x + 20, y + 5, 5, 5, '#8ac8f0');
+        });
+        for (let i = 0; i < 16; i++) { const x = rnd() * W, y = H * .1 + rnd() * H * .85; if (Math.abs(x - W / 2) < 16 + y * .12) continue; R(x - 1, y + 5, 2, 3, '#6a4018'); blob(x, y, 5, 5, '#1f7a2a'); blob(x - 1, y - 1, 3, 3, '#3aa845'); }
+        for (let i = 0; i < 40; i++) R(rnd() * W, rnd() * H, 1, 1, rnd() < .5 ? '#fff' : '#f06080');
+    }
+    function tetris() {
+        R(0, 0, W, H, '#080820');
+        for (let x = 0; x < W; x += 6) R(x, 0, 1, H, '#0e0e32'); for (let y = 0; y < H; y += 6) R(0, y, W, 1, '#0e0e32');
+        const C = ['#00d8e8', '#f8d800', '#a000e8', '#00d000', '#e80000', '#2030f0', '#f08000'];
+        const blk = (x, y, c) => { R(x, y, 6, 6, c); R(x, y, 6, 1, 'rgba(255,255,255,.55)'); R(x, y, 1, 6, 'rgba(255,255,255,.4)'); R(x, y + 5, 6, 1, 'rgba(0,0,0,.45)'); R(x + 5, y, 1, 6, 'rgba(0,0,0,.35)'); };
+        const SH = [[[0, 0], [1, 0], [2, 0], [3, 0]], [[0, 0], [1, 0], [0, 1], [1, 1]], [[1, 0], [0, 1], [1, 1], [2, 1]], [[1, 0], [2, 0], [0, 1], [1, 1]], [[0, 0], [1, 0], [1, 1], [2, 1]], [[0, 0], [0, 1], [1, 1], [2, 1]], [[2, 0], [0, 1], [1, 1], [2, 1]]];
+        const cols = Math.ceil(W / 6), rows = Math.ceil(H / 6);
+        for (let r = 0; r < 6; r++) for (let c = 0; c < cols; c++) if (rnd() < .9 - r * .13) blk(c * 6, (rows - 1 - r) * 6, C[rnd() * 7 | 0]);
+        for (let i = 0; i < 9; i++) { const k = rnd() * 7 | 0, px = (rnd() * (cols - 4) | 0) * 6, py = (rnd() * rows * .5 | 0) * 6; SH[k].forEach(([a, b]) => blk(px + a * 6, py + b * 6, C[k])); }
+    }
+    function ff() {
+        sky(0, H, [0, 0, 30], [24, 36, 120], 16);
+        for (let i = 0; i < W * H / 90; i++) R(rnd() * W, rnd() * H * .7, 1, 1, rnd() < .2 ? '#fff' : '#8890d0');
+        blob(W * .8, H * .2, 8, 8, '#e8ecff'); blob(W * .8 - 2, H * .2 - 1, 3, 3, '#c8d0f0');
+        for (let x = 0; x < W; x++) R(x, H * .62 + Math.sin(x / 9) * 3 + Math.sin(x / 23 + 1) * 6, 1, H, '#14143c');
+        for (let x = 0; x < W; x++) R(x, H * .82 + Math.sin(x / 15) * 2, 1, H, '#06061a');
+        const cx = Math.round(W / 2), cy = Math.round(H * .6);
+        [20, 15, 10].forEach(r => blob(cx, cy, r, r, 'rgba(80,200,255,.12)'));
+        for (let dy = -12; dy <= 12; dy++) { const w = Math.round(8 * (1 - Math.abs(dy) / 12)); R(cx - w, cy + dy, w * 2, 1, dy < 0 ? '#5fe0ff' : '#2aa8d8'); }
+        R(cx - 1, cy - 8, 2, 10, '#fff');
+    }
+    const BG = [{ n: 'DEFAULT' }, { n: 'COLOR CYCLE', f: cyc }, { n: 'XP BLISS', f: bliss }, { n: 'LINK BEACH', f: beach },
+        { n: 'POKE CENTER', f: center }, { n: 'POKE TOWN', f: town }, { n: 'TETRIS', f: tetris, d: 1 }, { n: 'FINAL FANTASY', f: ff, d: 1 }];
+    function draw() {
+        clearInterval(tmr);
+        document.body.classList.toggle('bgdark', !!BG[bi].d);
+        cv.style.display = bi ? 'block' : 'none';
+        if (!bi) return;
+        W = Math.ceil(innerWidth / P); H = Math.ceil(innerHeight / P); cv.width = W; cv.height = H; seed = 12345;
+        if (BG[bi].f === cyc) { cyc(Date.now()); tmr = setInterval(() => cyc(Date.now()), 90); } else BG[bi].f();
+    }
+    $('bgBtn').onclick = () => { bi = (bi + 1) % BG.length; $('bgBtn').textContent = '🖼️ BG: ' + BG[bi].n; AudioEngine.blip(640); draw(); };
+    let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if (bi) draw(); }, 150); });
+
+    // ---- Game Boy shell colors: D-Pad left / right ----
+    const SH = [['', ''], ['PURPLE', 'purple'], ['YELLOW', 'yellow'], ['ORANGE', 'orange'], ['RED', 'red'],
+        ['CLEAR PURPLE', 'tpurple'], ['CLEAR GREEN', 'tgreen'], ['CLEAR WHITE', 'twhite'], ['CLEAR BLUE', 'tblue']];
+    document.querySelectorAll('section.gbc-shell').forEach((sec, n) => {
+        const def = sec.classList.contains('gbc-kiwi') ? 'gbc-kiwi' : 'gbc-teal';
+        let idx = 0;
+        const set = d => {
+            idx = (idx + d + SH.length) % SH.length;
+            sec.classList.remove('gbc-kiwi', 'gbc-teal', 'gbc-c', ...SH.slice(1).map(s => 'gbc-c-' + s[1]));
+            if (idx) sec.classList.add('gbc-c', 'gbc-c-' + SH[idx][1]); else sec.classList.add(def);
+            showToast((n ? 'Right' : 'Left') + ' Game Boy: ' + (idx ? SH[idx][0] : def === 'gbc-kiwi' ? 'KIWI GREEN (DEFAULT)' : 'TEAL (DEFAULT)'), '🎨');
+        };
+        const b = sec.querySelectorAll('.dpad-btn');
+        b[2].title = 'Previous color'; b[3].title = 'Next color';
+        b[2].addEventListener('click', () => set(-1)); b[3].addEventListener('click', () => set(1));
+    });
+})();
+</script>
+</body>
+</html>
